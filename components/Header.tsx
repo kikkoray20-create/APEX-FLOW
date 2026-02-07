@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Home, User as UserIcon, Bell, Settings, ChevronRight, Menu, LogOut, Radio, Volume2, Cloud, CloudOff } from 'lucide-react';
 import { User } from '../types';
@@ -20,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   onMenuClick, 
   showAllTransactions, 
   onToggleAllTransactions,
-  onLogout 
+  onLogout
 }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);

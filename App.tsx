@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -143,12 +144,16 @@ const AppContent: React.FC = () => {
   }, [currentUser]);
 
   const loadBaseData = async () => {
-    const [usersData, warehousesData] = await Promise.all([
+    const [usersData, warehousesData, inventoryData, customersData] = await Promise.all([
       fetchUsers(currentUser?.instanceId),
-      fetchMasterRecords('warehouse')
+      fetchMasterRecords('warehouse'),
+      fetchInventory(currentUser?.instanceId),
+      fetchCustomers(currentUser?.instanceId)
     ]);
     setUsers(usersData);
     setAvailableWarehouses(warehousesData);
+    setAllInventory(inventoryData);
+    setAllCustomers(customersData);
   };
 
   // Global Refresh handles everything (Filters, Status, Search, Sorting)
@@ -223,7 +228,7 @@ const AppContent: React.FC = () => {
         case 'LAST MONTH':
             const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
             const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).getTime();
-            return orderTime >= lastMonthStart && orderTime <= lastMonthEnd;
+            return lastMonthStart <= orderTime && orderTime <= lastMonthEnd;
         default:
             return true;
     }
@@ -556,7 +561,7 @@ const AppContent: React.FC = () => {
   if (!currentUser) return <Login onLogin={handleLogin} />;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex">
+    <div className="min-h-screen bg-[#f8fafc] flex relative">
       <Sidebar currentView={currentView} onChangeView={handleViewChange} userRole={currentUser.role} userId={currentUser.id} isCollapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} isMobileOpen={mobileSidebarOpen} onMobileClose={() => setMobileSidebarOpen(false)} />
       <div className="flex-1 transition-all duration-300 min-w-0">
         <main className="px-4 md:px-10 pb-10 max-w-[1600px] mx-auto min-h-screen">
