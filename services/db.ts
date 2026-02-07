@@ -1,3 +1,4 @@
+
 import { 
     collection, 
     getDocs, 
@@ -13,7 +14,7 @@ import {
     getDoc
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { User, Order, Customer, Firm, InventoryItem, InventoryLog, GRInventoryItem, RolePermissions, PingNotification } from '../types';
+import { User, Order, Customer, Firm, InventoryItem, InventoryLog, RolePermissions, PingNotification } from '../types';
 import { MOCK_USERS, MOCK_CUSTOMERS, MOCK_INVENTORY } from '../constants';
 
 const KEYS = {
@@ -49,7 +50,7 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
                 return cloudData;
             }
         } catch (e) {
-            console.warn(`🛰️ Cloud fetch failed for [${collectionName}], using local cache. Error:`, e);
+            console.warn(`🛰️ Cloud fetch failed for [${collectionName}], using local cache.`);
         }
     }
 
@@ -60,7 +61,6 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
         parsed = local ? JSON.parse(local) : [];
         if (!Array.isArray(parsed)) parsed = [];
     } catch (error) {
-        console.error("Local storage parse error for " + localStoreKey, error);
         parsed = [];
     }
     
@@ -151,7 +151,6 @@ export const listenToOrders = (instanceId: string | undefined, callback: (orders
     });
 };
 
-// Listener for a SPECIFIC Order to enable real-time editing visibility
 export const listenToOrderDetails = (orderId: string, callback: (order: Order) => void): (() => void) => {
     if (!db) return () => {};
     
@@ -165,7 +164,6 @@ export const listenToOrderDetails = (orderId: string, callback: (order: Order) =
 };
 
 // --- Cloud Ping Logic ---
-
 export const sendCloudPing = async (targetUserId: string, senderName: string, instanceId?: string, isManual = false) => {
     if (!db) return;
     try {
@@ -176,7 +174,7 @@ export const sendCloudPing = async (targetUserId: string, senderName: string, in
             instanceId: instanceId || 'global',
             timestamp: serverTimestamp(),
             played: false,
-            isManual: isManual // Sounds will trigger based on this
+            isManual: isManual
         };
         const docId = `ping-${Date.now()}-${targetUserId}`;
         await setDoc(doc(db, KEYS.pings, docId), newPing);
@@ -216,7 +214,6 @@ export const markPingAsPlayed = async (pingId: string) => {
 };
 
 // --- Public API Methods ---
-
 export const fetchUsers = (instanceId?: string): Promise<User[]> => 
     getData(KEYS.users, 'users', MOCK_USERS, instanceId);
 
