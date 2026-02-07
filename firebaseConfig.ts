@@ -8,22 +8,40 @@ import { getAuth } from "firebase/auth";
  * This module connects the app to Firebase Firestore.
  */
 
-// Safely access Vite environment variables. 
-// Optional chaining (?.) prevents crashes if import.meta.env is not defined in the browser.
-// Fix: Added casting to any to resolve "Property 'env' does not exist on type 'ImportMeta'" TypeScript errors
-const meta = import.meta as any;
-const firebaseConfig = {
-  apiKey: (meta.env?.VITE_FIREBASE_API_KEY as string) || "",
-  authDomain: (meta.env?.VITE_FIREBASE_AUTH_DOMAIN as string) || "",
-  projectId: (meta.env?.VITE_FIREBASE_PROJECT_ID as string) || "",
-  storageBucket: (meta.env?.VITE_FIREBASE_STORAGE_BUCKET as string) || "",
-  messagingSenderId: (meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID as string) || "",
-  appId: (meta.env?.VITE_FIREBASE_APP_ID as string) || "",
-  measurementId: (meta.env?.VITE_FIREBASE_MEASUREMENT_ID as string) || ""
+// Defensive helper to get environment variables without crashing
+const getSafeEnv = (key: string): string => {
+  try {
+    // Check Vite's import.meta.env
+    const viteEnv = (import.meta as any).env;
+    if (viteEnv && viteEnv[key]) return viteEnv[key];
+    
+    // Check Node-style process.env (rare in browser but some polyfills use it)
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      return process.env[key] as string;
+    }
+
+    // Check window global (fallback if you inject keys via script tag)
+    if (typeof window !== 'undefined' && (window as any)._APP_CONFIG && (window as any)._APP_CONFIG[key]) {
+      return (window as any)._APP_CONFIG[key];
+    }
+  } catch (e) {
+    // Fail silently
+  }
+  return "";
 };
 
-// Check if Project ID is present as a baseline for connectivity
-const isConfigValid = !!firebaseConfig.projectId;
+const firebaseConfig = {
+  apiKey: getSafeEnv('VITE_FIREBASE_API_KEY'),
+  authDomain: getSafeEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+  projectId: getSafeEnv('VITE_FIREBASE_PROJECT_ID'),
+  storageBucket: getSafeEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getSafeEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getSafeEnv('VITE_FIREBASE_APP_ID'),
+  measurementId: getSafeEnv('VITE_FIREBASE_MEASUREMENT_ID')
+};
+
+// Basal connectivity check
+const isConfigValid = !!firebaseConfig.projectId && !!firebaseConfig.apiKey;
 
 let db: any = null;
 let auth: any = null;
@@ -40,7 +58,7 @@ if (isConfigValid) {
         console.error("❌ Firebase Initialization Error:", error);
     }
 } else {
-    console.warn("⚠️ Firebase Configuration Missing or Incomplete. Working in Local-Only Mode.");
+    console.warn("⚠️ Firebase Configuration Missing. Check GitHub Secrets and Workflow Environment mapping.");
 }
 
 export { db, auth, isCloudActive };
