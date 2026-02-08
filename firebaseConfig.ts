@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -14,7 +13,7 @@ const getSafeEnv = (key: string): string => {
     // Check Vite's import.meta.env
     const viteEnv = (import.meta as any).env;
     if (viteEnv && viteEnv[key]) return viteEnv[key];
-
+    
     // Check Node-style process.env (rare in browser but some polyfills use it)
     if (typeof process !== 'undefined' && process.env && process.env[key]) {
       return process.env[key] as string;
@@ -58,7 +57,13 @@ if (isConfigValid) {
         console.error("❌ Firebase Initialization Error:", error);
     }
 } else {
-    console.warn("⚠️ Firebase Configuration Missing. Check GitHub Secrets and Workflow Environment mapping.");
+    console.warn("⚠️ Firebase Configuration Missing. If this is GitHub Pages, check your Workflow Env mapping.");
+    // Log keys presence (not values for security) to help debugging
+    console.debug("Config Status:", {
+      hasProjectId: !!firebaseConfig.projectId,
+      hasApiKey: !!firebaseConfig.apiKey,
+      hasAppId: !!firebaseConfig.appId
+    });
 }
 
 export { db, auth, isCloudActive };
