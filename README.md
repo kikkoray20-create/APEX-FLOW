@@ -1,22 +1,18 @@
-
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# ApexFlow v3.0 - Cloud Integration Guide 🚀
+# ApexFlow v2.7.5 🚀
 
-## 🔗 Firebase से कैसे कनेक्ट करें? (GitHub Pages Setup)
+## 🔗 Firebase से कैसे कनेक्ट करें? (Connectivity Guide)
 
-GitHub Pages पर "Offline Mode" को "Connected" में बदलने के लिए आपको ये स्टेप्स फॉलो करने होंगे:
+अगर आपको Header में "Offline Mode" दिख रहा है, तो मतलब Firebase कनेक्ट नहीं है। इसे ठीक करने के लिए:
 
-### 1. Firebase सेटअप
-1. [Firebase Console](https://console.firebase.google.com/) पर जाएं।
-2. नया प्रोजेक्ट बनाएं और **Firestore Database** को "Test Mode" में इनेबल करें।
-3. Project Settings से अपनी **Web App Config** (API Keys) कॉपी करें।
-
-### 2. GitHub Secrets में Keys डालना
-1. अपनी GitHub Repository की **Settings > Secrets and variables > Actions** में जाएं।
-2. **New repository secret** पर क्लिक करें और ये 6 चीज़ें भरें:
+1. **Firebase Console** (console.firebase.google.com) पर जाएं।
+2. अपना प्रोजेक्ट चुनें और "Web App" सेटिंग्स से अपनी **API Keys** कॉपी करें।
+3. अपने **GitHub** रिपॉजिटरी में जाएं।
+4. **Settings > Secrets and variables > Actions** पर क्लिक करें।
+5. **New repository secret** बटन दबाएं और नीचे दी गई 6 चीज़ें एक-एक करके भरें:
    - `VITE_FIREBASE_API_KEY`
    - `VITE_FIREBASE_AUTH_DOMAIN`
    - `VITE_FIREBASE_PROJECT_ID`
@@ -24,25 +20,8 @@ GitHub Pages पर "Offline Mode" को "Connected" में बदलने 
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
 
-### 3. GitHub Actions Workflow अपडेट करें (सबसे ज़रूरी!)
-सिर्फ Secrets डालने से काम नहीं चलेगा। आपको अपनी `.github/workflows/deploy.yml` फाइल में `Build` स्टेप के अंदर इन Variables को मैप करना होगा:
+6. ये सब भरने के बाद, Google AI Studio में आकर फिर से **Push/Update** करें। आपका ऐप क्लाउड से कनेक्ट हो जाएगा!
 
-```yaml
-- name: Build
-  run: npm run build
-  env:
-    VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-    VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-    VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-    VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-    VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-    VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-```
-
-### 4. फिर से पुश करें
-जब आप कोड पुश करेंगे, GitHub इन Secrets को लेकर ऐप को बिल्ड करेगा और आपकी Keys JavaScript फाइल के अंदर सुरक्षित रूप से लिख दी जाएंगी। इसके बाद आपका ऐप क्लाउड से कनेक्ट हो जाएगा!
-
-## लोकल रन (Local Run)
-1. `.env` फाइल बनाएं और उसमें ऊपर दी गई Keys डालें।
-2. `npm install`
-3. `npm run dev`
+## Local Run
+1. `npm install`
+2. `npm run dev`

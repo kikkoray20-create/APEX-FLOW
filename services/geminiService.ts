@@ -1,9 +1,7 @@
 
 /**
- * AI Service Disabled
- * AI features have been removed as per user request.
+ * Service decommissioned.
+ * AI Assistant functionality has been removed from the application.
  */
-export const getAIResponseStream = async () => {
-    console.warn("AI Service is disabled.");
-    return null;
-};
+export const searchMarketTrends = async () => ({ text: '', groundingChunks: [] });
+export const analyzeComplexData = async () => '';

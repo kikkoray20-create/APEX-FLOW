@@ -4,66 +4,50 @@ import { getAuth } from "firebase/auth";
 
 /**
  * 🛰️ APEXFLOW SECURE CLOUD BRIDGE
- * This module connects the app to Firebase Firestore.
  */
 
-// Defensive helper to get environment variables without crashing
-const getSafeEnv = (key: string): string => {
-  try {
-    // Check Vite's import.meta.env
-    const viteEnv = (import.meta as any).env;
-    if (viteEnv && viteEnv[key]) return viteEnv[key];
-    
-    // Check Node-style process.env (rare in browser but some polyfills use it)
-    if (typeof process !== 'undefined' && process.env && process.env[key]) {
-      return process.env[key] as string;
-    }
-
-    // Check window global (fallback if you inject keys via script tag)
-    if (typeof window !== 'undefined' && (window as any)._APP_CONFIG && (window as any)._APP_CONFIG[key]) {
-      return (window as any)._APP_CONFIG[key];
-    }
-  } catch (e) {
-    // Fail silently
-  }
-  return "";
+const getSafeEnv = () => {
+    try {
+        const viteEnv = (import.meta as any).env;
+        if (viteEnv) return viteEnv;
+    } catch (e) {}
+    return {};
 };
+
+const env = getSafeEnv();
 
 const firebaseConfig = {
-  apiKey: getSafeEnv('VITE_FIREBASE_API_KEY'),
-  authDomain: getSafeEnv('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: getSafeEnv('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: getSafeEnv('VITE_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: getSafeEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: getSafeEnv('VITE_FIREBASE_APP_ID'),
-  measurementId: getSafeEnv('VITE_FIREBASE_MEASUREMENT_ID')
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Basal connectivity check
-const isConfigValid = !!firebaseConfig.projectId && !!firebaseConfig.apiKey;
+// Check if all essential keys are present
+const isConfigActive = !!firebaseConfig.apiKey && 
+                      firebaseConfig.apiKey !== "undefined" && 
+                      firebaseConfig.apiKey !== "";
 
 let db: any = null;
 let auth: any = null;
 let isCloudActive = false;
 
-if (isConfigValid) {
+if (isConfigActive) {
     try {
+        // Use modular initialization
         const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
         db = getFirestore(app);
         auth = getAuth(app);
         isCloudActive = true;
-        console.log("✅ ApexFlow Cloud Node Connected Successfully.");
+        console.log("✅ ApexFlow Cloud Node Connected.");
     } catch (error) {
         console.error("❌ Firebase Initialization Error:", error);
     }
 } else {
-    console.warn("⚠️ Firebase Configuration Missing. If this is GitHub Pages, check your Workflow Env mapping.");
-    // Log keys presence (not values for security) to help debugging
-    console.debug("Config Status:", {
-      hasProjectId: !!firebaseConfig.projectId,
-      hasApiKey: !!firebaseConfig.apiKey,
-      hasAppId: !!firebaseConfig.appId
-    });
+    console.warn("⚠️ Firebase Keys missing. Running in Local Storage Mode.");
 }
 
 export { db, auth, isCloudActive };
