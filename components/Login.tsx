@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User as UserType } from '../types';
-import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, Cpu } from 'lucide-react';
+import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, CloudOff } from 'lucide-react';
 import { fetchUsers } from '../services/db';
+import { isCloudActive } from '../firebaseConfig';
 
 interface LoginProps {
   onLogin: (user: UserType) => void;
@@ -52,16 +53,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     try {
-        // FORCE BYPASS CACHE to ensure we get new users from cloud
+        // Force fresh fetch from cloud
         const users = await fetchUsers(undefined, true);
         
-        // Final fallback to cached users if cloud returned absolutely nothing (offline mode)
-        const finalUsers = users.length > 0 ? users : await fetchUsers();
+        console.log(`🔐 Login Attempt: Found ${users.length} users in registry.`);
         
-        const matchedUser = finalUsers.find(u => 
-            u.phone && u.phone.replace(/\D/g, '').endsWith(cleanMobile) && 
-            String(u.password) === cleanPass
-        );
+        // Find user with extremely robust comparison
+        const matchedUser = users.find(u => {
+            const dbPhone = String(u.phone || '').replace(/\D/g, '');
+            const dbPass = String(u.password || '').trim();
+            
+            // Check if db phone ends with the 10 digits provided
+            const phoneMatches = dbPhone.endsWith(cleanMobile);
+            const passMatches = dbPass === cleanPass;
+            
+            return phoneMatches && passMatches;
+        });
 
         if (matchedUser) {
             if (!matchedUser.active) {
@@ -71,12 +78,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             }
             onLogin(matchedUser);
         } else {
-            setError('IDENTITY MISMATCH: INVALID MOBILE OR PIN');
+            // Check if we are in local mode (might be using mock data)
+            if (!isCloudActive) {
+                setError('LOCAL MODE: USE MOCK ADMIN (1231231231 / 123)');
+            } else {
+                setError('IDENTITY MISMATCH: INVALID MOBILE OR PIN');
+            }
             setLoading(false);
         }
     } catch (err) {
-        console.error("Login Fetch Error:", err);
-        setError('SECURE PROTOCOL ERROR: CLOUD SYNC FAILED');
+        console.error("Login Error:", err);
+        setError('SECURE PROTOCOL ERROR: SYNC FAILED');
         setLoading(false);
     }
   };
@@ -93,6 +105,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">ApexFlow</h1>
             <p className="text-slate-400 text-[10px] mt-3 font-black uppercase tracking-[0.4em]">Management Console</p>
+            
+            {!isCloudActive && (
+              <div className="mt-4 flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-500 rounded-full border border-rose-100 animate-pulse">
+                <CloudOff size={12} strokeWidth={3} />
+                <span className="text-[8px] font-black uppercase tracking-widest">Local Mode Active</span>
+              </div>
+            )}
         </div>
 
         <div className="bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] p-10 md:p-14 border border-slate-100">
