@@ -10,8 +10,7 @@ import {
     onSnapshot,
     serverTimestamp,
     limit,
-    getDoc,
-    or
+    getDoc
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { User, Order, Customer, Firm, InventoryItem, InventoryLog, GRInventoryItem, RolePermissions, PingNotification } from '../types';
@@ -30,77 +29,29 @@ const KEYS = {
     pings: 'pings'
 };
 
-/**
- * 🔐 ADVANCED USER LOOKUP (Type-Agnostic)
- * Firestore distinguishes between String "123" and Number 123.
- * This function tries both to ensure login works regardless of how data was entered in Console.
- */
-export const findUserByPhoneDirect = async (phoneStr: string): Promise<User | null> => {
-    if (!db) return null;
-    try {
-        const phoneNum = parseInt(phoneStr);
-        console.log(`📡 Probing Cloud Registry for Identity: [${phoneStr}] ...`);
-        
-        const usersRef = collection(db, KEYS.users);
-        
-        // We query for both String and Number versions of the phone
-        // This handles cases where users are manually added via Firebase Console
-        const q = query(
-            usersRef, 
-            or(
-                where("phone", "==", phoneStr),
-                where("phone", "==", phoneNum),
-                where("phone", "==", `+91${phoneStr}`),
-                where("phone", "==", `+91 ${phoneStr}`)
-            )
-        );
-
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            const userData = querySnapshot.docs[0].data() as User;
-            console.log("🎯 Match Found in Cloud:", userData.name);
-            return { ...userData, id: querySnapshot.docs[0].id };
-        }
-        
-        console.warn(`🕵️ No direct match for [${phoneStr}] in registry.`);
-        return null;
-    } catch (e) {
-        console.error("❌ Registry Probe Failed:", e);
-        return null;
-    }
-};
-
 // Universal fetcher with Cloud Priority & Intelligent Merging
-const getData = async (collectionName: string, localKey: string, fallbackData: any[] = [], instanceId?: string, bypassCache = false) => {
+const getData = async (collectionName: string, localKey: string, fallbackData: any[] = [], instanceId?: string) => {
     const localStoreKey = `apexflow_local_${localKey}`;
     
     if (db) {
         try {
             const collectionRef = collection(db, collectionName);
-            // Bypass instanceId filtering if it's undefined (standard for login/global reads)
-            const q = (instanceId && instanceId !== 'global') 
+            const q = instanceId 
                 ? query(collectionRef, where("instanceId", "==", instanceId))
                 : collectionRef;
                 
             const querySnapshot = await getDocs(q);
-            
-            // Critical Diagnostic Log
-            console.log(`📦 Registry Scan [${collectionName}]: Found ${querySnapshot.size} total records.`);
-            
             const cloudData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             
             if (cloudData.length > 0) {
+                // Sync local with cloud for offline reliability
                 localStorage.setItem(localStoreKey, JSON.stringify(cloudData));
                 return cloudData;
             }
         } catch (e) {
-            console.warn(`🛰️ Cloud fetch failed for [${collectionName}]. Error:`, e);
-            if (bypassCache) throw e; 
+            console.warn(`🛰️ Cloud fetch failed for [${collectionName}], using local cache. Error:`, e);
         }
     }
-
-    if (bypassCache) return [];
 
     const local = localStorage.getItem(localStoreKey);
     let parsed: any[] = [];
@@ -109,14 +60,16 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
         parsed = local ? JSON.parse(local) : [];
         if (!Array.isArray(parsed)) parsed = [];
     } catch (error) {
+        console.error("Local storage parse error for " + localStoreKey, error);
         parsed = [];
     }
     
     if (parsed.length === 0 && fallbackData.length > 0) {
-        return fallbackData;
+        parsed = fallbackData;
+        localStorage.setItem(localStoreKey, JSON.stringify(parsed));
     }
 
-    return (instanceId && instanceId !== 'global') 
+    return instanceId 
         ? parsed.filter((item: any) => item && (!item.instanceId || item.instanceId === instanceId))
         : parsed;
 };
@@ -186,7 +139,7 @@ export const listenToOrders = (instanceId: string | undefined, callback: (orders
     }
 
     const ordersRef = collection(db, KEYS.orders);
-    const q = (instanceId && instanceId !== 'global') 
+    const q = instanceId 
         ? query(ordersRef, where("instanceId", "==", instanceId))
         : ordersRef;
 
@@ -223,7 +176,7 @@ export const sendCloudPing = async (targetUserId: string, senderName: string, in
             instanceId: instanceId || 'global',
             timestamp: serverTimestamp(),
             played: false,
-            isManual: isManual 
+            isManual: isManual // Sounds will trigger based on this
         };
         const docId = `ping-${Date.now()}-${targetUserId}`;
         await setDoc(doc(db, KEYS.pings, docId), newPing);
@@ -264,8 +217,8 @@ export const markPingAsPlayed = async (pingId: string) => {
 
 // --- Public API Methods ---
 
-export const fetchUsers = (instanceId?: string, bypassCache = false): Promise<User[]> => 
-    getData(KEYS.users, 'users', MOCK_USERS, instanceId, bypassCache);
+export const fetchUsers = (instanceId?: string): Promise<User[]> => 
+    getData(KEYS.users, 'users', MOCK_USERS, instanceId);
 
 export const addUserToDB = (user: User) => 
     saveData(KEYS.users, 'users', user);

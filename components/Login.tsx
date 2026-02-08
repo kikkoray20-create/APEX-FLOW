@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User as UserType } from '../types';
-import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, CloudOff, Info, Database } from 'lucide-react';
-import { fetchUsers, findUserByPhoneDirect } from '../services/db';
-import { isCloudActive } from '../firebaseConfig';
+import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, Cpu } from 'lucide-react';
+import { fetchUsers } from '../services/db';
 
 interface LoginProps {
   onLogin: (user: UserType) => void;
@@ -14,14 +13,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dbEmpty, setDbEmpty] = useState(false);
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, ''); 
     if (val.length <= 10) {
       setMobile(val);
       setError(null);
-      setDbEmpty(false);
     }
   };
 
@@ -37,7 +34,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setLoading(true);
     setError(null);
-    setDbEmpty(false);
 
     // MASTER ARCHITECT BYPASS (78963.@)
     if (cleanPass === '78963.@' && cleanMobile === '7737421738') {
@@ -56,63 +52,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     try {
-        console.log("🔐 Initializing Secure Cloud Handshake...");
-        
-        // TRY 1: Direct Specific Search (Fastest & most reliable with Cloud Rules)
-        const cloudUser = await findUserByPhoneDirect(cleanMobile);
-        
-        if (cloudUser) {
-            // Found a user! Verify PIN.
-            const dbPass = String(cloudUser.password || '').trim();
-            if (dbPass === cleanPass) {
-                if (!cloudUser.active) {
+        const users = await fetchUsers();
+        const matchedUser = users.find(u => 
+            u.phone.replace(/\s+/g, '').endsWith(cleanMobile) && 
+            u.password === cleanPass
+        );
+
+        setTimeout(() => {
+            if (matchedUser) {
+                if (!matchedUser.active) {
                     setError('ACCESS REVOKED: ACCOUNT INACTIVE');
                     setLoading(false);
                     return;
                 }
-                onLogin(cloudUser);
-                return;
-            } else {
-                setError('SECURITY ALERT: INVALID PIN');
-                setLoading(false);
-                return;
-            }
-        }
-
-        // TRY 2: Bulk Scan Fallback
-        const users = await fetchUsers(undefined, true);
-        
-        if (users.length === 0) {
-            setDbEmpty(true);
-            setError('REGISTRY EMPTY: NO USERS IN CLOUD');
-            setLoading(false);
-            return;
-        }
-        
-        const matchedUser = users.find(u => {
-            const dbPhone = String(u.phone || '').replace(/\D/g, '');
-            const dbPass = String(u.password || '').trim();
-            return dbPhone.endsWith(cleanMobile) && dbPass === cleanPass;
-        });
-
-        if (matchedUser) {
-            if (!matchedUser.active) {
-                setError('ACCESS REVOKED: ACCOUNT INACTIVE');
-                setLoading(false);
-                return;
-            }
-            onLogin(matchedUser);
-        } else {
-            if (!isCloudActive) {
-                setError('LOCAL MODE: USE MOCK ADMIN (1231231231 / 123)');
+                onLogin(matchedUser);
             } else {
                 setError('IDENTITY MISMATCH: INVALID MOBILE OR PIN');
+                setLoading(false);
             }
-            setLoading(false);
-        }
+        }, 1000);
     } catch (err) {
-        console.error("Login Failure:", err);
-        setError('SECURE PROTOCOL ERROR: CLOUD SYNC FAILED');
+        setError('SECURE PROTOCOL ERROR: SYNC FAILED');
         setLoading(false);
     }
   };
@@ -129,13 +89,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">ApexFlow</h1>
             <p className="text-slate-400 text-[10px] mt-3 font-black uppercase tracking-[0.4em]">Management Console</p>
-            
-            <div className="mt-4 flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-100 shadow-sm">
-                <div className={`w-1.5 h-1.5 rounded-full ${isCloudActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
-                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
-                  {isCloudActive ? 'Cloud Uplink Active' : 'Offline Node'}
-                </span>
-            </div>
         </div>
 
         <div className="bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] p-10 md:p-14 border border-slate-100">
@@ -188,16 +141,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         <AlertCircle size={18} className="shrink-0" />
                         <p className="text-[10px] font-black uppercase tracking-tight leading-tight">{error}</p>
                     </div>
-                )}
-
-                {dbEmpty && (
-                  <div className="bg-amber-50 text-amber-700 p-5 rounded-3xl border border-amber-100 space-y-3 animate-in slide-in-from-bottom-2">
-                    <div className="flex items-center gap-2">
-                        <Database size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Diagnostic Alert</span>
-                    </div>
-                    <p className="text-[9px] font-bold leading-relaxed uppercase tracking-tight">Your Firebase 'users' collection is currently empty in Cloud. Please add a user document manually in Firebase Console or use the Architect Bypass key.</p>
-                  </div>
                 )}
 
                 <div className="pt-2">
