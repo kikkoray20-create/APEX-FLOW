@@ -52,27 +52,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     try {
-        const users = await fetchUsers();
-        const matchedUser = users.find(u => 
-            u.phone.replace(/\s+/g, '').endsWith(cleanMobile) && 
-            u.password === cleanPass
+        // FORCE BYPASS CACHE to ensure we get new users from cloud
+        const users = await fetchUsers(undefined, true);
+        
+        // Final fallback to cached users if cloud returned absolutely nothing (offline mode)
+        const finalUsers = users.length > 0 ? users : await fetchUsers();
+        
+        const matchedUser = finalUsers.find(u => 
+            u.phone && u.phone.replace(/\D/g, '').endsWith(cleanMobile) && 
+            String(u.password) === cleanPass
         );
 
-        setTimeout(() => {
-            if (matchedUser) {
-                if (!matchedUser.active) {
-                    setError('ACCESS REVOKED: ACCOUNT INACTIVE');
-                    setLoading(false);
-                    return;
-                }
-                onLogin(matchedUser);
-            } else {
-                setError('IDENTITY MISMATCH: INVALID MOBILE OR PIN');
+        if (matchedUser) {
+            if (!matchedUser.active) {
+                setError('ACCESS REVOKED: ACCOUNT INACTIVE');
                 setLoading(false);
+                return;
             }
-        }, 1000);
+            onLogin(matchedUser);
+        } else {
+            setError('IDENTITY MISMATCH: INVALID MOBILE OR PIN');
+            setLoading(false);
+        }
     } catch (err) {
-        setError('SECURE PROTOCOL ERROR: SYNC FAILED');
+        console.error("Login Fetch Error:", err);
+        setError('SECURE PROTOCOL ERROR: CLOUD SYNC FAILED');
         setLoading(false);
     }
   };

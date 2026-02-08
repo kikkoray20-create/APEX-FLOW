@@ -30,7 +30,7 @@ const KEYS = {
 };
 
 // Universal fetcher with Cloud Priority & Intelligent Merging
-const getData = async (collectionName: string, localKey: string, fallbackData: any[] = [], instanceId?: string) => {
+const getData = async (collectionName: string, localKey: string, fallbackData: any[] = [], instanceId?: string, bypassCache = false) => {
     const localStoreKey = `apexflow_local_${localKey}`;
     
     if (db) {
@@ -50,8 +50,11 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
             }
         } catch (e) {
             console.warn(`🛰️ Cloud fetch failed for [${collectionName}], using local cache. Error:`, e);
+            if (bypassCache) throw e; 
         }
     }
+
+    if (bypassCache) return [];
 
     const local = localStorage.getItem(localStoreKey);
     let parsed: any[] = [];
@@ -217,8 +220,8 @@ export const markPingAsPlayed = async (pingId: string) => {
 
 // --- Public API Methods ---
 
-export const fetchUsers = (instanceId?: string): Promise<User[]> => 
-    getData(KEYS.users, 'users', MOCK_USERS, instanceId);
+export const fetchUsers = (instanceId?: string, bypassCache = false): Promise<User[]> => 
+    getData(KEYS.users, 'users', MOCK_USERS, instanceId, bypassCache);
 
 export const addUserToDB = (user: User) => 
     saveData(KEYS.users, 'users', user);
