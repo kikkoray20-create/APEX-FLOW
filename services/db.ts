@@ -29,6 +29,31 @@ const KEYS = {
     pings: 'pings'
 };
 
+// Direct Cloud search for Login to bypass global fetch issues
+export const findUserByPhoneDirect = async (phone: string): Promise<User | null> => {
+    if (!db) return null;
+    try {
+        console.log(`🛰️ Searching Cloud for Phone: ${phone}...`);
+        const usersRef = collection(db, KEYS.users);
+        const q = query(usersRef, where("phone", "==", phone));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            const userData = querySnapshot.docs[0].data() as User;
+            console.log("✅ Cloud User Found:", userData.name);
+            return { ...userData, id: querySnapshot.docs[0].id };
+        }
+        
+        // Try fallback: number might be stored without country code or with spaces
+        // If the above failed, we can't do complex filters in Firestore without index,
+        // so we'll rely on the main Login logic fallback to fetchUsers().
+        return null;
+    } catch (e) {
+        console.error("❌ Direct User Fetch Error:", e);
+        return null;
+    }
+};
+
 // Universal fetcher with Cloud Priority & Intelligent Merging
 const getData = async (collectionName: string, localKey: string, fallbackData: any[] = [], instanceId?: string, bypassCache = false) => {
     const localStoreKey = `apexflow_local_${localKey}`;
@@ -41,15 +66,18 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
                 : collectionRef;
                 
             const querySnapshot = await getDocs(q);
+            console.log(`📦 Cloud Sync [${collectionName}]: Found ${querySnapshot.size} documents.`);
+            
             const cloudData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             
             if (cloudData.length > 0) {
-                // Sync local with cloud for offline reliability
                 localStorage.setItem(localStoreKey, JSON.stringify(cloudData));
                 return cloudData;
+            } else if (querySnapshot.size === 0 && !bypassCache) {
+                console.warn(`⚠️ Collection [${collectionName}] is empty in Cloud.`);
             }
         } catch (e) {
-            console.warn(`🛰️ Cloud fetch failed for [${collectionName}], using local cache. Error:`, e);
+            console.warn(`🛰️ Cloud fetch failed for [${collectionName}]. Error:`, e);
             if (bypassCache) throw e; 
         }
     }
@@ -63,13 +91,11 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
         parsed = local ? JSON.parse(local) : [];
         if (!Array.isArray(parsed)) parsed = [];
     } catch (error) {
-        console.error("Local storage parse error for " + localStoreKey, error);
         parsed = [];
     }
     
     if (parsed.length === 0 && fallbackData.length > 0) {
-        parsed = fallbackData;
-        localStorage.setItem(localStoreKey, JSON.stringify(parsed));
+        return fallbackData;
     }
 
     return instanceId 

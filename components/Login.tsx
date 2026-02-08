@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User as UserType } from '../types';
-import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, CloudOff } from 'lucide-react';
-import { fetchUsers } from '../services/db';
+import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, CloudOff, Info } from 'lucide-react';
+import { fetchUsers, findUserByPhoneDirect } from '../services/db';
 import { isCloudActive } from '../firebaseConfig';
 
 interface LoginProps {
@@ -53,21 +53,30 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     try {
-        // Force fresh fetch from cloud
+        // FALLBACK 1: Try direct specific search first (Best for cloud rules)
+        console.log("🔐 Starting Secure Identity Handshake...");
+        const cloudUser = await findUserByPhoneDirect(cleanMobile);
+        
+        if (cloudUser) {
+            if (String(cloudUser.password).trim() === cleanPass) {
+                if (!cloudUser.active) {
+                    setError('ACCESS REVOKED: ACCOUNT INACTIVE');
+                    setLoading(false);
+                    return;
+                }
+                onLogin(cloudUser);
+                return;
+            }
+        }
+
+        // FALLBACK 2: Try bulk fetch if direct search failed or didn't exist
         const users = await fetchUsers(undefined, true);
         
-        console.log(`🔐 Login Attempt: Found ${users.length} users in registry.`);
-        
-        // Find user with extremely robust comparison
+        // Find user in bulk list
         const matchedUser = users.find(u => {
             const dbPhone = String(u.phone || '').replace(/\D/g, '');
             const dbPass = String(u.password || '').trim();
-            
-            // Check if db phone ends with the 10 digits provided
-            const phoneMatches = dbPhone.endsWith(cleanMobile);
-            const passMatches = dbPass === cleanPass;
-            
-            return phoneMatches && passMatches;
+            return dbPhone.endsWith(cleanMobile) && dbPass === cleanPass;
         });
 
         if (matchedUser) {
@@ -78,7 +87,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             }
             onLogin(matchedUser);
         } else {
-            // Check if we are in local mode (might be using mock data)
+            // FALLBACK 3: Final check for mock admin if totally offline/local
             if (!isCloudActive) {
                 setError('LOCAL MODE: USE MOCK ADMIN (1231231231 / 123)');
             } else {
@@ -106,12 +115,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">ApexFlow</h1>
             <p className="text-slate-400 text-[10px] mt-3 font-black uppercase tracking-[0.4em]">Management Console</p>
             
-            {!isCloudActive && (
-              <div className="mt-4 flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-500 rounded-full border border-rose-100 animate-pulse">
-                <CloudOff size={12} strokeWidth={3} />
-                <span className="text-[8px] font-black uppercase tracking-widest">Local Mode Active</span>
-              </div>
-            )}
+            <div className="mt-4 flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-100 shadow-sm">
+                <div className={`w-1.5 h-1.5 rounded-full ${isCloudActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                  {isCloudActive ? 'Cloud Uplink Active' : 'Offline Node'}
+                </span>
+            </div>
         </div>
 
         <div className="bg-white rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] p-10 md:p-14 border border-slate-100">
@@ -164,6 +173,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         <AlertCircle size={18} className="shrink-0" />
                         <p className="text-[10px] font-black uppercase tracking-tight leading-tight">{error}</p>
                     </div>
+                )}
+
+                {isCloudActive && !error && !loading && (
+                  <div className="px-4 py-3 bg-indigo-50/30 rounded-2xl border border-indigo-100/50 flex items-center gap-3">
+                    <Info size={14} className="text-indigo-400 shrink-0" />
+                    <p className="text-[8px] font-bold text-indigo-500 uppercase leading-relaxed tracking-wider">Cloud Data Priority Enabled. Newly created users can log in immediately.</p>
+                  </div>
                 )}
 
                 <div className="pt-2">
