@@ -10,7 +10,8 @@ import {
     onSnapshot,
     serverTimestamp,
     limit,
-    getDoc
+    getDoc,
+    or
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { User, Order, Customer, Firm, InventoryItem, InventoryLog, GRInventoryItem, RolePermissions, PingNotification } from '../types';
@@ -29,27 +30,43 @@ const KEYS = {
     pings: 'pings'
 };
 
-// Direct Cloud search for Login to bypass global fetch issues
-export const findUserByPhoneDirect = async (phone: string): Promise<User | null> => {
+/**
+ * 🔐 ADVANCED USER LOOKUP (Type-Agnostic)
+ * Firestore distinguishes between String "123" and Number 123.
+ * This function tries both to ensure login works regardless of how data was entered in Console.
+ */
+export const findUserByPhoneDirect = async (phoneStr: string): Promise<User | null> => {
     if (!db) return null;
     try {
-        console.log(`🛰️ Searching Cloud for Phone: ${phone}...`);
+        const phoneNum = parseInt(phoneStr);
+        console.log(`📡 Probing Cloud Registry for Identity: [${phoneStr}] ...`);
+        
         const usersRef = collection(db, KEYS.users);
-        const q = query(usersRef, where("phone", "==", phone));
+        
+        // We query for both String and Number versions of the phone
+        // This handles cases where users are manually added via Firebase Console
+        const q = query(
+            usersRef, 
+            or(
+                where("phone", "==", phoneStr),
+                where("phone", "==", phoneNum),
+                where("phone", "==", `+91${phoneStr}`),
+                where("phone", "==", `+91 ${phoneStr}`)
+            )
+        );
+
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
             const userData = querySnapshot.docs[0].data() as User;
-            console.log("✅ Cloud User Found:", userData.name);
+            console.log("🎯 Match Found in Cloud:", userData.name);
             return { ...userData, id: querySnapshot.docs[0].id };
         }
         
-        // Try fallback: number might be stored without country code or with spaces
-        // If the above failed, we can't do complex filters in Firestore without index,
-        // so we'll rely on the main Login logic fallback to fetchUsers().
+        console.warn(`🕵️ No direct match for [${phoneStr}] in registry.`);
         return null;
     } catch (e) {
-        console.error("❌ Direct User Fetch Error:", e);
+        console.error("❌ Registry Probe Failed:", e);
         return null;
     }
 };
@@ -61,20 +78,21 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
     if (db) {
         try {
             const collectionRef = collection(db, collectionName);
-            const q = instanceId 
+            // Bypass instanceId filtering if it's undefined (standard for login/global reads)
+            const q = (instanceId && instanceId !== 'global') 
                 ? query(collectionRef, where("instanceId", "==", instanceId))
                 : collectionRef;
                 
             const querySnapshot = await getDocs(q);
-            console.log(`📦 Cloud Sync [${collectionName}]: Found ${querySnapshot.size} documents.`);
+            
+            // Critical Diagnostic Log
+            console.log(`📦 Registry Scan [${collectionName}]: Found ${querySnapshot.size} total records.`);
             
             const cloudData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             
             if (cloudData.length > 0) {
                 localStorage.setItem(localStoreKey, JSON.stringify(cloudData));
                 return cloudData;
-            } else if (querySnapshot.size === 0 && !bypassCache) {
-                console.warn(`⚠️ Collection [${collectionName}] is empty in Cloud.`);
             }
         } catch (e) {
             console.warn(`🛰️ Cloud fetch failed for [${collectionName}]. Error:`, e);
@@ -98,7 +116,7 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
         return fallbackData;
     }
 
-    return instanceId 
+    return (instanceId && instanceId !== 'global') 
         ? parsed.filter((item: any) => item && (!item.instanceId || item.instanceId === instanceId))
         : parsed;
 };
@@ -168,7 +186,7 @@ export const listenToOrders = (instanceId: string | undefined, callback: (orders
     }
 
     const ordersRef = collection(db, KEYS.orders);
-    const q = instanceId 
+    const q = (instanceId && instanceId !== 'global') 
         ? query(ordersRef, where("instanceId", "==", instanceId))
         : ordersRef;
 
@@ -205,7 +223,7 @@ export const sendCloudPing = async (targetUserId: string, senderName: string, in
             instanceId: instanceId || 'global',
             timestamp: serverTimestamp(),
             played: false,
-            isManual: isManual // Sounds will trigger based on this
+            isManual: isManual 
         };
         const docId = `ping-${Date.now()}-${targetUserId}`;
         await setDoc(doc(db, KEYS.pings, docId), newPing);

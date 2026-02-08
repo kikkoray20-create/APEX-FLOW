@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User as UserType } from '../types';
-import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, CloudOff, Info } from 'lucide-react';
+import { Lock, Smartphone, Eye, EyeOff, ShieldCheck, Layers, ArrowRight, Loader2, AlertCircle, CloudOff, Info, Database } from 'lucide-react';
 import { fetchUsers, findUserByPhoneDirect } from '../services/db';
 import { isCloudActive } from '../firebaseConfig';
 
@@ -14,12 +14,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dbEmpty, setDbEmpty] = useState(false);
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, ''); 
     if (val.length <= 10) {
       setMobile(val);
       setError(null);
+      setDbEmpty(false);
     }
   };
 
@@ -35,6 +37,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setLoading(true);
     setError(null);
+    setDbEmpty(false);
 
     // MASTER ARCHITECT BYPASS (78963.@)
     if (cleanPass === '78963.@' && cleanMobile === '7737421738') {
@@ -53,12 +56,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     try {
-        // FALLBACK 1: Try direct specific search first (Best for cloud rules)
-        console.log("🔐 Starting Secure Identity Handshake...");
+        console.log("🔐 Initializing Secure Cloud Handshake...");
+        
+        // TRY 1: Direct Specific Search (Fastest & most reliable with Cloud Rules)
         const cloudUser = await findUserByPhoneDirect(cleanMobile);
         
         if (cloudUser) {
-            if (String(cloudUser.password).trim() === cleanPass) {
+            // Found a user! Verify PIN.
+            const dbPass = String(cloudUser.password || '').trim();
+            if (dbPass === cleanPass) {
                 if (!cloudUser.active) {
                     setError('ACCESS REVOKED: ACCOUNT INACTIVE');
                     setLoading(false);
@@ -66,13 +72,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 }
                 onLogin(cloudUser);
                 return;
+            } else {
+                setError('SECURITY ALERT: INVALID PIN');
+                setLoading(false);
+                return;
             }
         }
 
-        // FALLBACK 2: Try bulk fetch if direct search failed or didn't exist
+        // TRY 2: Bulk Scan Fallback
         const users = await fetchUsers(undefined, true);
         
-        // Find user in bulk list
+        if (users.length === 0) {
+            setDbEmpty(true);
+            setError('REGISTRY EMPTY: NO USERS IN CLOUD');
+            setLoading(false);
+            return;
+        }
+        
         const matchedUser = users.find(u => {
             const dbPhone = String(u.phone || '').replace(/\D/g, '');
             const dbPass = String(u.password || '').trim();
@@ -87,7 +103,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             }
             onLogin(matchedUser);
         } else {
-            // FALLBACK 3: Final check for mock admin if totally offline/local
             if (!isCloudActive) {
                 setError('LOCAL MODE: USE MOCK ADMIN (1231231231 / 123)');
             } else {
@@ -96,8 +111,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             setLoading(false);
         }
     } catch (err) {
-        console.error("Login Error:", err);
-        setError('SECURE PROTOCOL ERROR: SYNC FAILED');
+        console.error("Login Failure:", err);
+        setError('SECURE PROTOCOL ERROR: CLOUD SYNC FAILED');
         setLoading(false);
     }
   };
@@ -175,10 +190,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     </div>
                 )}
 
-                {isCloudActive && !error && !loading && (
-                  <div className="px-4 py-3 bg-indigo-50/30 rounded-2xl border border-indigo-100/50 flex items-center gap-3">
-                    <Info size={14} className="text-indigo-400 shrink-0" />
-                    <p className="text-[8px] font-bold text-indigo-500 uppercase leading-relaxed tracking-wider">Cloud Data Priority Enabled. Newly created users can log in immediately.</p>
+                {dbEmpty && (
+                  <div className="bg-amber-50 text-amber-700 p-5 rounded-3xl border border-amber-100 space-y-3 animate-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-2">
+                        <Database size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Diagnostic Alert</span>
+                    </div>
+                    <p className="text-[9px] font-bold leading-relaxed uppercase tracking-tight">Your Firebase 'users' collection is currently empty in Cloud. Please add a user document manually in Firebase Console or use the Architect Bypass key.</p>
                   </div>
                 )}
 
