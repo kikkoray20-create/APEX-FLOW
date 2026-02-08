@@ -14,7 +14,7 @@ const getSafeEnv = (key: string): string => {
     // Check Vite's import.meta.env
     const viteEnv = (import.meta as any).env;
     if (viteEnv && viteEnv[key]) return viteEnv[key];
-    
+
     // Check Node-style process.env (rare in browser but some polyfills use it)
     if (typeof process !== 'undefined' && process.env && process.env[key]) {
       return process.env[key] as string;
@@ -31,13 +31,13 @@ const getSafeEnv = (key: string): string => {
 };
 
 const firebaseConfig = {
-  apiKey: getSafeEnv('AIzaSyBVXl_YA5xY03BjSeehrbSb3-9d6_ngsd4'),
-  authDomain: getSafeEnv('apexflow-b43da.firebaseapp.com'),
-  projectId: getSafeEnv('apexflow-b43da'),
-  storageBucket: getSafeEnv('apexflow-b43da.firebasestorage.app'),
-  messagingSenderId: getSafeEnv('669291481874'),
-  appId: getSafeEnv('1:669291481874:web:8732388638dfbded1dc1cb'),
-  measurementId: getSafeEnv('G-RJSC9JE04H')
+  apiKey: getSafeEnv('VITE_FIREBASE_API_KEY'),
+  authDomain: getSafeEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+  projectId: getSafeEnv('VITE_FIREBASE_PROJECT_ID'),
+  storageBucket: getSafeEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getSafeEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getSafeEnv('VITE_FIREBASE_APP_ID'),
+  measurementId: getSafeEnv('VITE_FIREBASE_MEASUREMENT_ID')
 };
 
 // Basal connectivity check
