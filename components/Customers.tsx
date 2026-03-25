@@ -268,6 +268,10 @@ const Customers: React.FC<CustomersProps> = ({ onCreateOrder, currentUser }) => 
 
   const handleGeneratePDF = () => {
     if (!statementRef.current) return;
+    if (!(window as any).html2pdf) {
+      showNotification('PDF library not loaded. Please refresh.', 'error');
+      return;
+    }
     const element = statementRef.current;
     const opt = {
       margin: [10, 10],

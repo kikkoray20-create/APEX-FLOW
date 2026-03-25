@@ -9,6 +9,7 @@ import {
     Database, Save, Unlock, ShoppingBag, FileText, CheckCircle, ZoomIn, ZoomOut, Maximize2
 } from 'lucide-react';
 import { InventoryItem, Customer, Order, OrderItem } from '../types';
+import { parseDateToComparable } from '../utils';
 import { fetchOrders, fetchCustomers, addOrderToDB, updateCustomerInDB, fetchUsers } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
@@ -78,27 +79,6 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({
     const [ledgerStatus, setLedgerStatus] = useState('ALL');
     const [ledgerStart, setLedgerStart] = useState(defaultDates.fourDaysAgo);
     const [ledgerEnd, setLedgerEnd] = useState(defaultDates.today);
-
-    const parseOrderDateForFilter = (dateStr: string) => {
-        try {
-            const parts = dateStr.split(' ');
-            const datePart = parts[0];
-            const [d, m, y] = datePart.split('/').map(Number);
-            
-            let hours = 0;
-            let minutes = 0;
-            
-            if (parts[1]) {
-                const timeParts = parts[1].split(':');
-                hours = parseInt(timeParts[0]);
-                minutes = parseInt(timeParts[1]);
-                if (parts[2] === 'PM' && hours < 12) hours += 12;
-                if (parts[2] === 'AM' && hours === 12) hours = 0;
-            }
-            
-            return new Date(y, m - 1, d, hours, minutes).getTime();
-        } catch (e) { return 0; }
-    };
 
     const getPortalDisplayStatus = (status: string, amount: number = 0) => {
         const s = status.toLowerCase();
@@ -272,7 +252,7 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     if (!orderStatuses.includes(s)) return false;
                 }
             }
-            const txTime = parseOrderDateForFilter(o.orderTime);
+            const txTime = parseDateToComparable(o.orderTime);
             if (ledgerStart) {
                 const start = new Date(ledgerStart).getTime();
                 if (txTime < start) return false;
@@ -283,7 +263,7 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 if (txTime > endDateTime.getTime()) return false;
             }
             return true;
-        }).sort((a, b) => parseOrderDateForFilter(b.orderTime) - parseOrderDateForFilter(a.orderTime));
+        }).sort((a, b) => parseDateToComparable(b.orderTime) - parseDateToComparable(a.orderTime));
     }, [allOrders, firmGroup, ledgerSearch, ledgerStatus, ledgerStart, ledgerEnd]);
 
     const handleRowClick = (order: Order) => {

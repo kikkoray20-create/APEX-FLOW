@@ -469,6 +469,10 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
 
   const handleDownloadInvoice = () => {
     if (!invoiceDocRef.current) return;
+    if (!(window as any).html2pdf) {
+      showNotification('PDF library not loaded. Please refresh.', 'error');
+      return;
+    }
     const element = invoiceDocRef.current;
     const opt = {
       margin: 10,

@@ -296,6 +296,10 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
     };
 
     const handleExport = () => {
+        if (!(window as any).XLSX) {
+            showNotification('Excel library not loaded. Please refresh.', 'error');
+            return;
+        }
         if (processedItems.length === 0) return;
         const data = processedItems.map(item => ({
             'Brand': item.brand,

@@ -332,13 +332,14 @@ const AppContent: React.FC = () => {
   }, [baseFilteredOrders, statusFilter, sortConfig, currentUser]);
 
   const renderView = () => {
-    if (orderingCustomer) return <CreateOrder customer={orderingCustomer} onBack={() => setOrderingCustomer(null)} onSubmitOrder={async (o, items) => { await addOrderToDB({...o, items, instanceId: currentUser?.instanceId}); setOrderingCustomer(null); handleViewChange('orders'); }} />;
+    if (!currentUser) return null;
+    if (orderingCustomer) return <CreateOrder customer={orderingCustomer} onBack={() => setOrderingCustomer(null)} onSubmitOrder={async (o, items) => { await addOrderToDB({...o, items, instanceId: currentUser.instanceId}); setOrderingCustomer(null); handleViewChange('orders'); }} />;
     if (selectedOrder) {
         if (selectedOrder.status === 'Payment' || selectedOrder.status === 'Return') return <FinancialInvoice order={selectedOrder} onClose={() => setSelectedOrder(null)} />;
         return <OrderDetail 
           order={selectedOrder} 
           onBack={() => setSelectedOrder(null)} 
-          currentUser={currentUser!} 
+          currentUser={currentUser} 
           allUsers={users} 
           onUpdateStatus={async (id, status, pId, pName, explicitItems) => {
             // CRITICAL: Fetch absolute latest data from orders list
@@ -484,14 +485,14 @@ const AppContent: React.FC = () => {
     if (selectedModel) return <ModelHistoryDetail model={selectedModel} onBack={() => setSelectedModel(null)} />;
 
     switch (currentView) {
-      case 'inventory': return <Inventory currentUser={currentUser!} />;
+      case 'inventory': return <Inventory currentUser={currentUser} />;
       case 'models': return <ShopModelList onViewModel={setSelectedModel} />;
-      case 'clients': return <Customers onCreateOrder={setOrderingCustomer} currentUser={currentUser!} />;
+      case 'clients': return <Customers onCreateOrder={setOrderingCustomer} currentUser={currentUser} />;
       case 'customer_firms': return <CustomerFirms />;
-      case 'customer_gr': return <CustomerGR currentUser={currentUser!} />;
-      case 'users': return <UserManagement currentUser={currentUser!} />;
+      case 'customer_gr': return <CustomerGR currentUser={currentUser} />;
+      case 'users': return <UserManagement currentUser={currentUser} />;
       case 'master_control': return <MasterControl />;
-      case 'links': return <LinksManager currentUser={currentUser!} />;
+      case 'links': return <LinksManager currentUser={currentUser} />;
       case 'broadcast': return <BroadcastGroups />;
       case 'order_reports': return <OrderReports />;
       case 'customer_order_report': return <CustomerOrderReports />;

@@ -1,0 +1,53 @@
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-admin-sidebar: #ffffff;
+  --color-admin-header: #4f46e5;
+  --color-admin-bg: #f1f5f9;
+  --color-admin-primary: #6366f1;
+  --color-admin-accent: #818cf8;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.sidebar-active {
+  background: linear-gradient(90deg, #f5f3ff 0%, #ffffff 100%);
+  color: #4f46e5;
+  border-right: 3px solid #4f46e5;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.table-header {
+  background: #f8fafc;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background-color: white !important;
+  }
+  main {
+      margin: 0 !important;
+      padding: 0 !important;
+  }
+}

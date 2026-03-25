@@ -53,6 +53,10 @@ const OrderReports: React.FC = () => {
     };
 
     const exportSummary = (filtered: Order[]) => {
+        if (!(window as any).XLSX) {
+            showNotification('Excel library not loaded. Please refresh.', 'error');
+            return;
+        }
         const data = filtered.map(o => ({
             'Order ID': o.id,
             'Date': o.orderTime.split(' ')[0],
@@ -69,6 +73,10 @@ const OrderReports: React.FC = () => {
     };
 
     const exportDetail = (filtered: Order[]) => {
+        if (!(window as any).XLSX) {
+            showNotification('Excel library not loaded. Please refresh.', 'error');
+            return;
+        }
         const detailedRows: any[] = [];
         filtered.forEach(o => {
             const storedItems = localStorage.getItem(`apexflow_items_${o.id}`);
