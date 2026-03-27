@@ -283,11 +283,11 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
         else setViewingItems([]);
         setViewingGR(gr);
         
-        // Trigger print after a longer delay to ensure DOM is fully ready and browser allows the dialog
+        // Trigger print after a short delay to ensure the hidden print-only content is rendered
         setTimeout(() => {
             window.print();
             setViewingGR(null);
-        }, 500);
+        }, 300);
     };
 
     const handleDeleteGR = async () => {
@@ -861,12 +861,12 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                 </div>
             </div>
 
-            {/* --- GR INVOICE/DETAILS POPUP MODAL (HIDDEN ON SCREEN, VISIBLE ON PRINT) --- */}
+            {/* --- GR INVOICE/DETAILS (HIDDEN ON SCREEN, VISIBLE ON PRINT) --- */}
             {viewingGR && (
                 <div className="fixed inset-0 bg-white z-[300] flex items-center justify-center p-0 opacity-0 pointer-events-none print:static print:opacity-100 print:pointer-events-auto print:flex">
                     <div className="bg-white w-full max-w-2xl flex flex-col overflow-hidden print:shadow-none print:border-none print:rounded-none">
                         
-                        {/* Modal Header */}
+                        {/* Modal Header (Hidden on Print) */}
                         <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 no-print shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-rose-600 text-white rounded-xl flex items-center justify-center shadow-lg">
@@ -877,12 +877,14 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ref ID: #{viewingGR.id.toString().slice(-8)}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setViewingGR(null)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shadow-sm">
-                                <X size={20} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setViewingGR(null)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shadow-sm">
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Scrollable Invoice Content */}
+                        {/* Invoice Content (Visible on Print) */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 bg-white print:p-0">
                             <div className="w-full mx-auto font-sans text-slate-900 flex flex-col">
                                 
@@ -964,12 +966,12 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                             </div>
                         </div>
 
-                        {/* Modal Action Strip */}
+                        {/* Modal Action Strip (Hidden on Print) */}
                         <div className="px-8 py-5 bg-white border-t border-slate-100 flex flex-wrap justify-center sm:justify-end gap-3 no-print shrink-0">
                             <button onClick={() => { 
                                 const summary = `*APEXFLOW CREDIT NOTE*\nRef: #${viewingGR.id.slice(-8)}\nClient: ${viewingGR.customerName}\nAmount: ₹${Math.abs(viewingGR.totalAmount || 0).toFixed(1)}\nDate: ${viewingGR.orderTime}`;
                                 navigator.clipboard.writeText(summary);
-                                showNotification('Summary Copied');
+                                showNotification('Summary Copied to Clipboard', 'success');
                             }} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all hover:bg-emerald-100"><Share2 size={16}/> Share</button>
                             
                             <button onClick={() => window.print()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all hover:bg-indigo-700">
