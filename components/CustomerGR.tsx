@@ -184,8 +184,8 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
     const handleUpdateReturnPrice = (itemId: string, val: string) => {
         const sanitized = val.replace(/[^0-9.]/g, '');
         setReturnCart(prev => {
-            if (!prev[itemId]) return prev;
-            return { ...prev, [itemId]: { ...prev[itemId], price: sanitized } };
+            const existing = prev[itemId] || { qty: 0 };
+            return { ...prev, [itemId]: { ...existing, price: sanitized } };
         });
     };
 
@@ -281,6 +281,12 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
         if (stored) setViewingItems(JSON.parse(stored));
         else setViewingItems([]);
         setViewingGR(gr);
+        
+        // Trigger print after a longer delay to ensure DOM is fully ready and browser allows the dialog
+        setTimeout(() => {
+            window.print();
+            setViewingGR(null);
+        }, 500);
     };
 
     const handleDeleteGR = async () => {
@@ -567,7 +573,31 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                         </div>
                                     )}
                                 </div>
-                                {((!isDirectMode && cartItemIds.length > 0) || (isDirectMode && directAmount)) && (<div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl z-40"><button onClick={() => setStep(3)} className="w-full bg-rose-600 text-white rounded-[2.5rem] p-8 shadow-2xl flex items-center justify-between active:scale-95 transition-all group overflow-hidden"><div className="flex items-center gap-5"><div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white relative"><RotateCcw size={28} strokeWidth={2.5} /><span className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-500 text-white text-[11px] font-black rounded-full flex items-center justify-center border-4 border-rose-600">{!isDirectMode ? cartItemIds.length : '1'}</span></div><div className="text-left"><h4 className="text-[12px] font-black uppercase tracking-widest opacity-80 leading-none">AGGREGATED CREDIT</h4><p className="text-3xl font-black tracking-tighter mt-1 italic">₹{totalCreditValue.toFixed(1)}</p></div></div><div className="flex items-center gap-4 pl-10 border-l border-white/20"><span className="text-base font-black uppercase tracking-[0.2em]">REVIEW DATA</span><ArrowRight size={24} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" /></div></button></div>)}
+                                {((!isDirectMode && cartItemIds.length > 0) || (isDirectMode && directAmount)) && (
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xl z-40">
+                                        <button 
+                                            onClick={() => setStep(3)} 
+                                            className="w-full bg-rose-600 text-white rounded-3xl p-5 shadow-xl flex items-center justify-between active:scale-95 transition-all group overflow-hidden"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center text-white relative">
+                                                    <RotateCcw size={22} strokeWidth={2.5} />
+                                                    <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-emerald-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-rose-600">
+                                                        {!isDirectMode ? cartItemIds.filter(id => returnCart[id].qty > 0).length : '1'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-left">
+                                                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">AGGREGATED CREDIT</h4>
+                                                    <p className="text-xl font-black tracking-tighter mt-1 italic">₹{totalCreditValue.toFixed(1)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 pl-6 border-l border-white/20">
+                                                <span className="text-[13px] font-black uppercase tracking-[0.2em]">REVIEW DATA</span>
+                                                <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+                                            </div>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="flex-1 p-6 md:p-16 bg-[#f8fafc] overflow-y-auto custom-scrollbar animate-in fade-in duration-300">
@@ -588,7 +618,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                         <div className="space-y-6 mb-16">
                                             {!isDirectMode ? (
                                                 <div className="divide-y divide-slate-50 bg-slate-50/50 rounded-[2.5rem] p-8 border border-slate-100">
-                                                    {cartItemIds.map(id => { 
+                                                    {cartItemIds.filter(id => returnCart[id].qty > 0).map(id => { 
                                                         const i = mainInventory.find(x => x.id === id)!; 
                                                         return (
                                                             <div key={id} className="flex justify-between items-center py-5">
@@ -818,10 +848,10 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                 </div>
             </div>
 
-            {/* --- GR INVOICE/DETAILS POPUP MODAL --- */}
+            {/* --- GR INVOICE/DETAILS POPUP MODAL (HIDDEN ON SCREEN, VISIBLE ON PRINT) --- */}
             {viewingGR && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300 print:static print:bg-white print:p-0">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 print:shadow-none print:border-none print:rounded-none animate-in zoom-in-95">
+                <div className="fixed inset-0 bg-white z-[300] flex items-center justify-center p-0 opacity-0 pointer-events-none print:static print:opacity-100 print:pointer-events-auto print:flex">
+                    <div className="bg-white w-full max-w-2xl flex flex-col overflow-hidden print:shadow-none print:border-none print:rounded-none">
                         
                         {/* Modal Header */}
                         <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 no-print shrink-0">
