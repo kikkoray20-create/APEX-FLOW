@@ -52,7 +52,8 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     subItems: [
       { label: 'Order Reports', id: 'order_reports' },
       { label: 'Client Order Report', id: 'customer_order_report' },
-      { label: 'Daily Fulfilled Summary', id: 'order_summary' }
+      { label: 'Daily Fulfilled Summary', id: 'order_summary' },
+      { label: 'GR Reports', id: 'gr_reports' }
     ], 
     isOpen: false 
   },

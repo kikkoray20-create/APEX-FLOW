@@ -30,6 +30,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [permissions, setPermissions] = useState<RolePermissions[]>([]);
 
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [hoveredTop, setHoveredTop] = useState<number>(0);
+
   useEffect(() => {
     fetchRolePermissions().then(setPermissions);
   }, []);
@@ -67,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 // Specific role logic
                 if (userRole !== 'Super Admin') {
                     if (userRole === 'GR') {
-                        return sub.id === 'customer_gr';
+                        return sub.id === 'customer_gr' || sub.id === 'gr_reports';
                     }
                 }
                 return true;
@@ -92,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         transition-all duration-300 bg-white border-r border-slate-200 flex flex-col shrink-0
         ${isMobileOpen 
           ? 'fixed left-0 top-0 h-screen z-[70] translate-x-0 w-[260px]' 
-          : 'relative hidden md:flex h-screen sticky top-0'}
+          : 'relative hidden md:flex h-screen sticky top-0 z-[50]'}
         ${isCollapsed && !isMobileOpen ? 'md:w-[80px]' : 'md:w-[260px]'}
       `}>
         
@@ -133,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        <div className="flex-1 py-6 overflow-y-auto custom-scrollbar overflow-x-hidden">
+        <div className="flex-1 py-6 overflow-y-auto custom-scrollbar overflow-x-visible">
           {(!isCollapsed || isMobileOpen) && (
             <p className="px-7 mb-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em] transition-opacity">
               {userId === 'root-master' ? 'Architect' : userRole.split(' ')[0]} Workstation
@@ -143,14 +146,23 @@ const Sidebar: React.FC<SidebarProps> = ({
           <nav className="space-y-1">
             {filteredNavItems.map((item) => {
               const isActive = currentView === item.id || (item.subItems?.some(s => s.id === currentView));
+              const isHovered = hoveredItem === item.id;
+              
               return (
-                <div key={item.id} className="relative">
+                <div 
+                  key={item.id} 
+                  className="relative group"
+                  onMouseEnter={(e) => {
+                    setHoveredItem(item.id);
+                    setHoveredTop(e.currentTarget.getBoundingClientRect().top);
+                  }}
+                  onMouseLeave={() => setHoveredItem(null)}
+                >
                   <button 
                     onClick={() => {
                         if (userRole === 'GR' && item.id === 'clients') {
                             onChangeView('customer_gr');
                         } else if (item.id === 'reports') {
-                            // Automatically open the first report type when clicking the main Reports icon
                             onChangeView('order_reports');
                         } else {
                             onChangeView(item.id);
@@ -174,6 +186,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <ChevronDown size={14} className={`transition-transform duration-300 ${isActive ? '' : '-rotate-90 opacity-40'}`} />
                     )}
                   </button>
+                  
+                  {/* Floating Submenu on Hover - REMOVED FROM HERE */}
                   
                   {isActive && item.subItems && (!isCollapsed || isMobileOpen) && (
                     <div className="bg-slate-50/50 py-2 animate-in slide-in-from-top-1 duration-200">
@@ -212,6 +226,52 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
         </div>
+
+        {/* Global Floating Submenu */}
+        {hoveredItem && filteredNavItems.find(i => i.id === hoveredItem)?.subItems && (
+            <div 
+                className={`
+                    absolute z-[9999] bg-white border border-slate-200 rounded-2xl shadow-2xl py-1.5 min-w-[180px]
+                    animate-in fade-in slide-in-from-left-4 duration-200 pointer-events-auto
+                    ${(isCollapsed && !isMobileOpen) ? 'left-[80px]' : 'left-[260px]'}
+                `}
+                style={{ top: `${hoveredTop}px` }}
+                onMouseEnter={() => setHoveredItem(hoveredItem)}
+                onMouseLeave={() => setHoveredItem(null)}
+            >
+                {/* Small Arrow */}
+                <div className="absolute -left-1.5 top-4 w-3 h-3 bg-white border-l border-b border-slate-200 rotate-45 rounded-sm" />
+                
+                <div className="px-4 py-2 border-b border-slate-50 mb-1 relative bg-white rounded-t-2xl">
+                    <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em]">
+                        {filteredNavItems.find(i => i.id === hoveredItem)?.label}
+                    </p>
+                </div>
+                <div className="px-1.5 space-y-0.5 relative bg-white rounded-b-2xl">
+                    {filteredNavItems.find(i => i.id === hoveredItem)?.subItems?.map(sub => (
+                        <button
+                            key={sub.id}
+                            onClick={() => {
+                                onChangeView(sub.id);
+                                onMobileClose();
+                                setHoveredItem(null);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-[10px] font-black transition-all flex items-center justify-between group/sub ${
+                                currentView === sub.id 
+                                    ? 'text-indigo-600 bg-indigo-50/50 rounded-xl' 
+                                    : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <div className={`w-1 h-1 rounded-full transition-all duration-300 ${currentView === sub.id ? 'bg-indigo-600 scale-125' : 'bg-slate-300 group-hover/sub:bg-indigo-400'}`} />
+                                <span>{sub.label.toUpperCase()}</span>
+                            </div>
+                            <ChevronDown size={10} className="-rotate-90 opacity-0 group-hover/sub:opacity-100 transition-all -translate-x-1 group-hover/sub:translate-x-0" />
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
       </aside>
     </>
   );

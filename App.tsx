@@ -19,6 +19,7 @@ import ModelHistoryDetail from './components/ModelHistoryDetail';
 import OrderReports from './components/OrderReports';
 import CustomerOrderReports from './components/CustomerOrderReports';
 import DailyFulfilledSummary from './components/DailyFulfilledSummary';
+import GRReports from './components/GRReports';
 import CreateOrder from './components/CreateOrder';
 import Login from './components/Login';
 import CustomerPortal from './components/CustomerPortal';
@@ -495,7 +496,7 @@ const AppContent: React.FC = () => {
       case 'models': return <ShopModelList onViewModel={setSelectedModel} />;
       case 'clients': return <Customers onCreateOrder={setOrderingCustomer} currentUser={currentUser} />;
       case 'customer_firms': return <CustomerFirms />;
-      case 'customer_gr': return <CustomerGR currentUser={currentUser} />;
+      case 'customer_gr': return <CustomerGR currentUser={currentUser} allUsers={users} />;
       case 'users': return <UserManagement currentUser={currentUser} />;
       case 'master_control': return <MasterControl />;
       case 'links': return <LinksManager currentUser={currentUser} />;
@@ -503,6 +504,7 @@ const AppContent: React.FC = () => {
       case 'order_reports': return <OrderReports />;
       case 'customer_order_report': return <CustomerOrderReports />;
       case 'order_summary': return <DailyFulfilledSummary />;
+      case 'gr_reports': return <GRReports currentUser={currentUser} />;
       default:
         const isStaff = currentUser && ['Picker', 'Checker', 'Dispatcher'].includes(currentUser.role);
         return (

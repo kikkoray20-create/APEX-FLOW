@@ -672,16 +672,16 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
                                             ))}
                                         </tbody>
                                         <tfoot>
-                                            <tr className="bg-slate-900 text-white border-t-2 border-slate-900">
-                                                <td colSpan={4} className="py-6 px-6">
-                                                    <div className="flex justify-between items-center text-sm font-black uppercase tracking-widest">
+                                            <tr className="border-t-2 border-slate-900">
+                                                <td colSpan={4} className="py-4 px-2">
+                                                    <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest text-slate-900">
                                                         <div className="flex items-center gap-4">
-                                                            <span className="opacity-60 text-[10px]">Total Qty:</span>
-                                                            <span className="text-xl">{totalFulfilledQty} PCS</span>
+                                                            <span className="text-slate-400">Total Qty:</span>
+                                                            <span>{totalFulfilledQty} PCS</span>
                                                         </div>
                                                         <div className="flex items-center gap-4">
-                                                            <span className="opacity-60 text-[10px]">Grand Total:</span>
-                                                            <span className="text-3xl tracking-tighter italic font-black">₹{totalInvoiceAmount.toFixed(1)}</span>
+                                                            <span className="text-slate-400">Grand Total:</span>
+                                                            <span className="text-lg italic">₹{totalInvoiceAmount.toFixed(1)}</span>
                                                         </div>
                                                     </div>
                                                 </td>

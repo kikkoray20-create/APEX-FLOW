@@ -167,11 +167,11 @@ const FinancialInvoice: React.FC<FinancialInvoiceProps> = ({ order, onClose }) =
                                     )}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="border-t-2 border-slate-900 bg-slate-50/50">
-                                        <td colSpan={order.status === 'Return' ? 3 : 1} className="py-6 px-1 text-sm font-black uppercase tracking-widest text-slate-900">
+                                    <tr className="border-t-2 border-slate-900">
+                                        <td colSpan={order.status === 'Return' ? 3 : 1} className="py-4 px-1 text-[11px] font-black uppercase tracking-widest text-slate-900">
                                             Total Credit Applied
                                         </td>
-                                        <td className={`py-6 px-1 text-right text-2xl font-black tracking-tighter ${order.status === 'Payment' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        <td className={`py-4 px-1 text-right text-lg font-black tracking-tighter italic ${order.status === 'Payment' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                             ₹{Math.abs(order.totalAmount || 0).toFixed(1)}
                                         </td>
                                     </tr>
