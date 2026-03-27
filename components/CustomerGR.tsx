@@ -46,6 +46,7 @@ import {
     Ban,
     Database
 } from 'lucide-react';
+import { isCloudActive } from '../firebaseConfig';
 import { Order, Customer, InventoryItem, GRInventoryItem, UserRole, OrderItem, User as UserType, InventoryLog } from '../types';
 import { fetchOrders, fetchCustomers, fetchInventory, addOrderToDB, deleteOrderFromDB, updateCustomerInDB, updateOrderInDB, addInventoryLogToDB, updateInventoryItemInDB } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
@@ -220,7 +221,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
             warehouse: isDirectMode ? 'Direct Adjustment' : 'Main GR Dept',
             status: 'Return',
             totalAmount: totalCreditValue,
-            orderMode: 'Offline',
+            orderMode: isCloudActive ? 'Online' : 'Offline',
             remarks: isDirectMode ? directRemarks : '',
             instanceId: currentUser.instanceId
         };
@@ -493,8 +494,8 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-black text-sm group-hover:bg-rose-600 group-hover:text-white transition-all shadow-inner">{customer.name.charAt(0)}</div>
                                                 <div className="text-left">
-                                                    <p className="text-[13px] font-black text-slate-800 uppercase tracking-tight leading-none">{customer.name}</p>
-                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{customer.phone} | {customer.city}</p>
+                                                    <p className="text-[11px] font-bold text-slate-800 uppercase tracking-tight leading-none">{customer.name}</p>
+                                                    <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest mt-1.5">{customer.phone} | {customer.city}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
@@ -525,11 +526,11 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                             {filteredInventoryForReturn.map(item => (
                                                 <div key={item.id} className="bg-white px-6 py-2.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4 group hover:border-rose-200 transition-all">
                                                     <div className="w-[15%] flex flex-col">
-                                                        <span className="text-[10px] font-black text-rose-600 uppercase tracking-tight leading-none mb-1">{item.brand}</span>
-                                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{item.quality}</span>
+                                                        <span className="text-[9px] font-bold text-rose-600 uppercase tracking-tight leading-none mb-1">{item.brand}</span>
+                                                        <span className="text-[7px] font-medium text-slate-400 uppercase tracking-widest leading-none">{item.quality}</span>
                                                     </div>
                                                     
-                                                    <h3 className="flex-1 text-[13px] font-black text-slate-800 uppercase leading-tight truncate pr-4">{item.model}</h3>
+                                                    <h3 className="flex-1 text-[11px] font-bold text-slate-800 uppercase leading-tight truncate pr-4">{item.model}</h3>
                                                     
                                                     <div className="w-32 flex justify-end pr-8">
                                                         <div className="relative w-24">
@@ -539,7 +540,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                                                 value={returnCart[item.id]?.price ?? item.price.toFixed(1)} 
                                                                 onChange={e => handleUpdateReturnPrice(item.id, e.target.value)} 
                                                                 onBlur={() => handlePriceBlur(item.id)} 
-                                                                className="w-full pl-5 pr-2 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-center text-[11px] font-black text-emerald-600 outline-none focus:bg-white focus:border-emerald-400 transition-all" 
+                                                                className="w-full pl-5 pr-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-center text-[10px] font-black text-emerald-600 outline-none focus:bg-white focus:border-emerald-400 transition-all" 
                                                             />
                                                         </div>
                                                     </div>
@@ -551,7 +552,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                                             value={returnCart[item.id]?.qty || ''} 
                                                             onChange={e => handleUpdateReturnQty(item.id, e.target.value, item.price)} 
                                                             placeholder="0" 
-                                                            className="w-16 h-9 border-2 rounded-xl text-center text-[12px] font-black outline-none transition-all bg-slate-50 border-slate-100 focus:bg-white focus:border-rose-500 shadow-inner" 
+                                                            className="w-16 h-8 border-2 rounded-xl text-center text-[11px] font-black outline-none transition-all bg-slate-50 border-slate-100 focus:bg-white focus:border-rose-500 shadow-inner" 
                                                         />
                                                     </div>
                                                 </div>
@@ -562,13 +563,13 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                             <div className="space-y-3">
                                                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Total Credit Value (₹)</label>
                                                 <div className="relative">
-                                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 text-3xl font-black">₹</span>
-                                                    <input type="number" value={directAmount} onChange={e => setDirectAmount(e.target.value)} placeholder="0.00" className="w-full pl-14 pr-6 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl text-4xl font-black outline-none focus:bg-white focus:border-rose-400 transition-all shadow-inner text-indigo-600" autoFocus />
+                                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 text-xl font-black">₹</span>
+                                                    <input type="number" value={directAmount} onChange={e => setDirectAmount(e.target.value)} placeholder="0.00" className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-2xl font-black outline-none focus:bg-white focus:border-rose-400 transition-all shadow-inner text-indigo-600" autoFocus />
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
                                                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Audit Remark / Reasoning</label>
-                                                <textarea value={directRemarks} onChange={e => setDirectRemarks(e.target.value)} placeholder="ENTER REASON FOR THIS MANUAL ADJUSTMENT..." className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-2xl text-[12px] font-bold uppercase outline-none focus:bg-white focus:border-rose-400 min-h-[120px] resize-none shadow-inner leading-relaxed" />
+                                                <textarea value={directRemarks} onChange={e => setDirectRemarks(e.target.value)} placeholder="ENTER REASON FOR THIS MANUAL ADJUSTMENT..." className="w-full px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold uppercase outline-none focus:bg-white focus:border-rose-400 min-h-[100px] resize-none shadow-inner leading-relaxed" />
                                             </div>
                                         </div>
                                     )}
@@ -577,23 +578,23 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xl z-40">
                                         <button 
                                             onClick={() => setStep(3)} 
-                                            className="w-full bg-rose-600 text-white rounded-3xl p-5 shadow-xl flex items-center justify-between active:scale-95 transition-all group overflow-hidden"
+                                            className="w-full bg-rose-600 text-white rounded-3xl p-3 shadow-xl flex items-center justify-between active:scale-95 transition-all group overflow-hidden"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center text-white relative">
-                                                    <RotateCcw size={22} strokeWidth={2.5} />
-                                                    <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-emerald-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-rose-600">
+                                                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white relative">
+                                                    <RotateCcw size={20} strokeWidth={2.5} />
+                                                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-rose-600">
                                                         {!isDirectMode ? cartItemIds.filter(id => returnCart[id].qty > 0).length : '1'}
                                                     </span>
                                                 </div>
                                                 <div className="text-left">
-                                                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">AGGREGATED CREDIT</h4>
-                                                    <p className="text-xl font-black tracking-tighter mt-1 italic">₹{totalCreditValue.toFixed(1)}</p>
+                                                    <h4 className="text-[9px] font-black uppercase tracking-widest opacity-80 leading-none">AGGREGATED CREDIT</h4>
+                                                    <p className="text-lg font-black tracking-tighter mt-1 italic">₹{totalCreditValue.toFixed(1)}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3 pl-6 border-l border-white/20">
-                                                <span className="text-[13px] font-black uppercase tracking-[0.2em]">REVIEW DATA</span>
-                                                <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+                                                <span className="text-xs font-black uppercase tracking-[0.2em]">REVIEW DATA</span>
+                                                <ArrowRight size={18} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
                                             </div>
                                         </button>
                                     </div>
@@ -627,8 +628,20 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                                                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-widest">{i.quality}</p>
                                                                 </div>
                                                                 <div className="text-right shrink-0">
-                                                                    <p className="text-[14px] font-black text-slate-900 leading-none">{returnCart[id].qty} x ₹{parseFloat(returnCart[id].price).toFixed(1)}</p>
-                                                                    <p className="text-[16px] font-black text-emerald-600 mt-1.5 italic tracking-tighter">₹{(returnCart[id].qty * parseFloat(returnCart[id].price)).toFixed(1)}</p>
+                                                                    <div className="flex items-center justify-end gap-2">
+                                                                        <span className="text-[12px] font-bold text-slate-400">{returnCart[id].qty} x</span>
+                                                                        <div className="relative w-20">
+                                                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 font-black text-[9px]">₹</span>
+                                                                            <input 
+                                                                                type="text" 
+                                                                                value={returnCart[id].price} 
+                                                                                onChange={e => handleUpdateReturnPrice(id, e.target.value)} 
+                                                                                onBlur={() => handlePriceBlur(id)} 
+                                                                                className="w-full pl-4 pr-1 py-1 bg-white border border-slate-200 rounded-lg text-center text-[11px] font-black text-emerald-600 outline-none focus:border-emerald-400 transition-all" 
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <p className="text-[16px] font-black text-emerald-600 mt-1.5 italic tracking-tighter">₹{(returnCart[id].qty * parseFloat(returnCart[id].price || '0')).toFixed(1)}</p>
                                                                 </div>
                                                             </div>
                                                         ); 
@@ -665,8 +678,8 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser }) => {
                                                 <p className="text-[12px] font-black text-emerald-600 uppercase mt-1">Pending Sync</p>
                                             </div>
                                         </div>
-                                        <button onClick={handleFinalizeGR} className="w-full py-8 bg-rose-600 text-white rounded-[2.5rem] font-black uppercase text-[15px] tracking-[0.2em] shadow-2xl shadow-rose-200 hover:bg-rose-700 transition-all flex items-center justify-center gap-4 active:scale-[0.98]">
-                                            Confirm and Authorize Credit Injection <CheckCircle2 size={28} strokeWidth={3} />
+                                        <button onClick={handleFinalizeGR} className="w-full py-4 bg-rose-600 text-white rounded-[2.5rem] font-black uppercase text-[13px] tracking-[0.2em] shadow-2xl shadow-rose-200 hover:bg-rose-700 transition-all flex items-center justify-center gap-4 active:scale-[0.98]">
+                                            Confirm and Authorize Credit Injection <CheckCircle2 size={24} strokeWidth={3} />
                                         </button>
                                     </div>
                                     <div className="text-center">

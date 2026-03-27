@@ -43,11 +43,29 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
             const querySnapshot = await getDocs(q);
             const cloudData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             
-            if (cloudData.length > 0) {
-                // Sync local with cloud for offline reliability
-                localStorage.setItem(localStoreKey, JSON.stringify(cloudData));
-                return cloudData;
+            const local = localStorage.getItem(localStoreKey);
+            let localData: any[] = [];
+            try {
+                localData = local ? JSON.parse(local) : [];
+                if (!Array.isArray(localData)) localData = [];
+            } catch (e) {
+                localData = [];
             }
+
+            // Merge logic: Cloud data is authoritative, but keep local items that haven't synced
+            const merged = [...cloudData];
+            localData.forEach((lItem: any) => {
+                if (lItem && lItem.id && !merged.find(cItem => cItem.id === lItem.id)) {
+                    // Only merge local items that match the requested instanceId (if provided)
+                    if (!instanceId || lItem.instanceId === instanceId) {
+                        merged.push(lItem);
+                    }
+                }
+            });
+
+            // Sync local with merged for offline reliability
+            localStorage.setItem(localStoreKey, JSON.stringify(merged));
+            return merged;
         } catch (e) {
             console.warn(`🛰️ Cloud fetch failed for [${collectionName}], using local cache. Error:`, e);
         }
@@ -78,18 +96,20 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
 const saveData = async (collectionName: string, localKey: string, data: any, isUpdate = false) => {
     const localStoreKey = `apexflow_local_${localKey}`;
     
+    const docRef = data.id ? doc(db, collectionName, data.id) : doc(collection(db, collectionName));
+    const docId = docRef.id;
+    const finalData = { ...data, id: docId, updatedAt: new Date().toISOString() };
+    
     if (db) {
         try {
-            const docRef = data.id ? doc(db, collectionName, data.id) : doc(collection(db, collectionName));
-            const docId = docRef.id;
-            const finalData = { ...data, id: docId, updatedAt: new Date().toISOString() };
             await setDoc(docRef, finalData, { merge: true });
-            data = finalData;
         } catch (e) {
             console.error("❌ Cloud sync failed:", e);
         }
     }
-
+    
+    // Always update the data object with the generated ID and timestamp for local storage
+    const dataToStore = finalData;
     const localStr = localStorage.getItem(localStoreKey);
     let localData: any[] = [];
     try {
@@ -100,13 +120,13 @@ const saveData = async (collectionName: string, localKey: string, data: any, isU
     }
     
     if (isUpdate) {
-        localData = localData.map((item: any) => item && item.id === data.id ? data : item);
+        localData = localData.map((item: any) => item && item.id === dataToStore.id ? dataToStore : item);
     } else {
-        const exists = localData.find((item: any) => item && item.id === data.id);
-        if (!exists) localData = [data, ...localData];
+        const exists = localData.find((item: any) => item && item.id === dataToStore.id);
+        if (!exists) localData = [dataToStore, ...localData];
     }
     localStorage.setItem(localStoreKey, JSON.stringify(localData));
-    return data;
+    return dataToStore;
 };
 
 const removeData = async (collectionName: string, localKey: string, id: string) => {
@@ -144,8 +164,43 @@ export const listenToOrders = (instanceId: string | undefined, callback: (orders
         : ordersRef;
 
     return onSnapshot(q, (snapshot) => {
-        const orders = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
-        callback(orders);
+        const cloudOrders = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
+        
+        // Merge with local storage to ensure "Offline" orders are visible even when online
+        const local = localStorage.getItem(`apexflow_local_orders`);
+        let localOrders: Order[] = [];
+        try {
+            localOrders = local ? JSON.parse(local) : [];
+            if (!Array.isArray(localOrders)) localOrders = [];
+        } catch (e) {
+            localOrders = [];
+        }
+
+        const merged = [...cloudOrders];
+        localOrders.forEach(lOrder => {
+            if (lOrder && lOrder.id && !merged.find(cOrder => cOrder.id === lOrder.id)) {
+                if (!instanceId || lOrder.instanceId === instanceId) {
+                    merged.push(lOrder);
+                }
+            }
+        });
+
+        // Sort by orderTime (desc)
+        const sorted = merged.sort((a, b) => {
+            const parseDate = (str: string) => {
+                try {
+                    const [dPart, tPart, ampm] = str.split(' ');
+                    const [d, m, y] = dPart.split('/').map(Number);
+                    let [hh, mm] = (tPart || '00:00').split(':').map(Number);
+                    if (ampm === 'PM' && hh < 12) hh += 12;
+                    if (ampm === 'AM' && hh === 12) hh = 0;
+                    return new Date(y, m - 1, d, hh, mm).getTime();
+                } catch (e) { return 0; }
+            };
+            return parseDate(b.orderTime) - parseDate(a.orderTime);
+        });
+
+        callback(sorted);
     }, (error) => {
         console.error("Error listening to orders:", error);
     });
