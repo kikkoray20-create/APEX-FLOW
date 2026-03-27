@@ -14,15 +14,22 @@ const OrderTable: React.FC<OrderTableProps> = ({ orders, onViewOrder, userRole, 
   const isStaff = userRole && ['Picker', 'Checker', 'Dispatcher'].includes(userRole);
 
   const SortIndicator = ({ columnKey }: { columnKey: keyof Order }) => {
-    if (!sortConfig || sortConfig.key !== columnKey) return (
-      <div className="flex flex-col opacity-10 ml-2">
-        <ArrowUp size={8} strokeWidth={4} />
-        <ArrowDown size={8} strokeWidth={4} />
+    const isActive = sortConfig && sortConfig.key === columnKey && sortConfig.direction !== null;
+    
+    if (!isActive) return (
+      <div className="flex flex-col opacity-20 ml-2">
+        <ArrowUp size={7} strokeWidth={4} />
+        <ArrowDown size={7} strokeWidth={4} />
       </div>
     );
+
     return (
       <div className="flex flex-col ml-2 text-indigo-600">
-        {sortConfig.direction === 'asc' ? <ArrowUp size={10} strokeWidth={4} /> : <ArrowDown size={10} strokeWidth={4} />}
+        {sortConfig.direction === 'asc' ? (
+          <ArrowUp size={9} strokeWidth={4} />
+        ) : (
+          <ArrowDown size={9} strokeWidth={4} />
+        )}
       </div>
     );
   };
@@ -48,12 +55,11 @@ const OrderTable: React.FC<OrderTableProps> = ({ orders, onViewOrder, userRole, 
         <table className="w-full text-left">
           <thead>
             <tr className="table-header select-none">
-              <HeaderCell label="Order ID" />
+              <HeaderCell label="Order ID" columnKey="id" />
               <HeaderCell label="Customer Info" columnKey="customerName" />
               <HeaderCell label="Order Time" columnKey="orderTime" />
               <HeaderCell label="Warehouse" columnKey="warehouse" />
               {!isStaff && <HeaderCell label="Status" columnKey="status" className="text-center" />}
-              {!isStaff && <HeaderCell label="Invoice Status" columnKey="invoiceStatus" className="text-center" />}
               <HeaderCell label="Order Mode" columnKey="orderMode" className="text-center" />
               <th className="px-6 py-5 text-right">Actions</th>
             </tr>
@@ -105,22 +111,6 @@ const OrderTable: React.FC<OrderTableProps> = ({ orders, onViewOrder, userRole, 
                                 {order.status === 'assigned' ? (order.assignedTo || 'ASSIGNED') : order.status}
                             </span>
                         </div>
-                    </td>
-                )}
-
-                {/* Invoice Status (Hidden for Staff) */}
-                {!isStaff && (
-                    <td className="px-6 py-6">
-                    <div className="flex justify-center">
-                        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
-                        order.invoiceStatus === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                        order.invoiceStatus === 'Sent' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                        'bg-slate-50 text-slate-500 border-slate-200'
-                        }`}>
-                        <CreditCard size={10} />
-                        {order.invoiceStatus}
-                        </span>
-                    </div>
                     </td>
                 )}
 

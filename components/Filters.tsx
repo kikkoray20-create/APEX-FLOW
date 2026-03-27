@@ -86,7 +86,6 @@ const Filters: React.FC<FiltersProps> = ({
                 <option value="PACKED">PACKED</option>
                 <option value="CHECKED">CHECKED</option>
                 <option value="DISPATCHED">DISPATCHED</option>
-                <option value="PENDING">PENDING</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
               <ChevronDown size={14} className={iconStyles} />

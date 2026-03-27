@@ -325,7 +325,6 @@ const Customers: React.FC<CustomersProps> = ({ onCreateOrder, currentUser }) => 
           status: 'Payment', 
           totalAmount: netAdjustment,
           warehouse: paymentForm.type === 'Add' ? 'Financial Credit' : 'Financial Debit',
-          invoiceStatus: 'Paid',
           orderMode: 'Offline',
           remarks: paymentForm.remarks || (paymentForm.type === 'Add' ? 'Manual credit add' : 'Manual debit deduction'),
           instanceId: currentUser.instanceId // INJECT INSTANCE ID

@@ -91,7 +91,6 @@ export interface Order extends BaseEntity {
   assignedTo?: string;
   assignedToId?: string;
   checkedBy?: string;
-  invoiceStatus: 'Pending' | 'Paid' | 'Overdue' | 'Sent';
   orderMode: OrderMode;
   cargoName?: string;
   totalAmount?: number;

@@ -120,7 +120,6 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ customer, onBack, onSubmitOrd
             orderTime: dateStr,
             warehouse: 'Main Warehouse',
             status: 'fresh',
-            invoiceStatus: 'Pending',
             orderMode: 'Offline',
             cargoName: cargoName,
             totalAmount: totalAmount

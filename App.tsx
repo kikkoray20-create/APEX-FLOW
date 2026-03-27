@@ -307,7 +307,6 @@ const AppContent: React.FC = () => {
         if (isStaff) return true;
 
         if (statusFilter === 'ALL STATUS') return o.status !== 'rejected';
-        if (statusFilter === 'PENDING') return o.invoiceStatus === 'Pending' && o.status !== 'rejected';
         
         return (o.status || '').toUpperCase() === statusFilter;
     });
@@ -316,13 +315,20 @@ const AppContent: React.FC = () => {
     const activeSortKey = sortConfig.key || 'orderTime';
     const activeSortDir = sortConfig.direction || 'desc';
     
-    return result.sort((a, b) => {
+    return [...result].sort((a, b) => {
         let valA: any = a[activeSortKey];
         let valB: any = b[activeSortKey];
         
         if (activeSortKey === 'orderTime') {
             valA = parseOrderDate(a.orderTime);
             valB = parseOrderDate(b.orderTime);
+        }
+
+        // Case-insensitive string sorting
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return activeSortDir === 'asc' 
+                ? valA.localeCompare(valB, undefined, { sensitivity: 'base' }) 
+                : valB.localeCompare(valA, undefined, { sensitivity: 'base' });
         }
         
         if (valA < valB) return activeSortDir === 'asc' ? -1 : 1;
@@ -518,7 +524,15 @@ const AppContent: React.FC = () => {
               orders={finalFilteredOrders} 
               onViewOrder={setSelectedOrder} 
               userRole={currentUser?.role} 
-              onSort={(key) => setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}
+              onSort={(key) => {
+                setSortConfig(prev => {
+                  if (prev.key === key) {
+                    if (prev.direction === 'asc') return { key, direction: 'desc' };
+                    if (prev.direction === 'desc') return { key: null, direction: null };
+                  }
+                  return { key, direction: 'asc' };
+                });
+              }}
               sortConfig={sortConfig}
             />
           </>

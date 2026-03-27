@@ -202,7 +202,6 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({
             orderTime: timestamp, 
             warehouse: warehouse || 'Online Portal', // Using the passed warehouse name
             status: 'fresh', 
-            invoiceStatus: 'Pending', 
             orderMode: 'Online', 
             cargoName: cargoName.toUpperCase(), 
             totalAmount, 

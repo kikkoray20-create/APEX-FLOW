@@ -17,9 +17,6 @@ const StatsCards: React.FC<StatsCardsProps> = ({ orders, activeFilter, onStatusC
   
   // Dashboard Total: All physical orders (excluding rejected/payments/returns for the headline total)
   const getDashboardTotal = () => orders.filter(o => o.status !== 'rejected' && o.status !== 'Payment' && o.status !== 'Return').length;
-  
-  // Pending: Physical orders with 'Pending' invoice status (excluding rejected)
-  const getPendingInvoiceCount = () => orders.filter(o => o.invoiceStatus === 'Pending' && o.status !== 'rejected' && o.status !== 'Payment' && o.status !== 'Return').length;
 
   const stats = [
     { label: 'Dashboard Total', filter: 'ALL STATUS', value: getDashboardTotal(), color: 'text-indigo-600', bg: 'bg-indigo-50', icon: <ShoppingBag size={20}/>, trend: 'ALL' },
@@ -28,12 +25,11 @@ const StatsCards: React.FC<StatsCardsProps> = ({ orders, activeFilter, onStatusC
     { label: 'In Packing', filter: 'PACKED', value: getCount('packed'), color: 'text-amber-600', bg: 'bg-amber-50', icon: <Box size={20}/>, trend: 'PACK' },
     { label: 'Quality Check', filter: 'CHECKED', value: getCount('checked'), color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <CheckCircle size={20}/>, trend: 'DONE' },
     { label: 'Dispatch Ready', filter: 'DISPATCHED', value: getCount('dispatched'), color: 'text-orange-600', bg: 'bg-orange-50', icon: <Truck size={20}/>, trend: 'LIVE' },
-    { label: 'PENDING', filter: 'PENDING', value: getPendingInvoiceCount(), color: 'text-violet-600', bg: 'bg-violet-50', icon: <Clock size={20}/>, trend: 'INV' },
   ];
 
   return (
     <div className="mb-10">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map((stat, idx) => {
           const isActive = activeFilter === stat.filter;
           return (
