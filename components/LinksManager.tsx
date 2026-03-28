@@ -284,7 +284,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
   }, [broadcastType, broadcastGroups, customers, recipientSearch]);
 
   if (simulationMode && activeLink) {
-      const allowedInventory = inventory.filter(i => i.status !== 'Inactive' && (activeLink.allowedModels || []).includes(i.id));
+      const allowedInventory = inventory.filter(i => i.status !== 'Inactive' && i.warehouse === activeLink.warehouse && (activeLink.allowedModels || []).includes(i.id));
       return <CustomerPortal storeName={activeLink.title} status={activeLink.status} onClose={() => setSimulationMode(false)} inventory={allowedInventory} allCustomers={customers} instanceId={activeLink.instanceId} />;
   }
 
