@@ -187,9 +187,6 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
     const filteredLogs = useMemo(() => {
         const searchLower = searchTerm.toLowerCase();
         return logs.filter(log => {
-            if (log.remarks && log.remarks.includes('Manual Batch')) return false;
-            if (log.remarks === 'Hidden individual entry for batch') return false;
-
             const matchesSearch = (log.remarks || '').toLowerCase().includes(searchLower) ||
                                 (log.shopName || '').toLowerCase().includes(searchLower) ||
                                 (log.items?.some(i => (i.model || '').toLowerCase().includes(searchLower)));
@@ -201,7 +198,6 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
     }, [logs, searchTerm, statusFilter]);
 
     const modalFilteredInventory = useMemo(() => {
-        if (!modalSearch) return [];
         const searchLower = modalSearch.toLowerCase();
         return inventory.filter(i => 
             ((i.model || '').toLowerCase().includes(searchLower) || 
