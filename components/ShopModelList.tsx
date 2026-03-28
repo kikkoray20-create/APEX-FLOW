@@ -146,6 +146,23 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
         try {
             await updateInventoryItemInDB(updatedItem);
 
+            if (newQuantity <= 0) {
+                const allLinks = await fetchLinks();
+                const updatePromises = allLinks.map(link => {
+                    const currentAllowed = link.allowedModels || [];
+                    const nextAllowed = currentAllowed.filter(id => id !== selectedStockItem.id);
+                    if (nextAllowed.length !== currentAllowed.length) {
+                        return updateLinkInDB({ ...link, allowedModels: nextAllowed });
+                    }
+                    return null;
+                }).filter(p => p !== null);
+
+                if (updatePromises.length > 0) {
+                    await Promise.all(updatePromises);
+                    showNotification('System: Item auto-removed from portals due to zero stock', 'info');
+                }
+            }
+
             const now = new Date();
             const timestamp = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 
@@ -197,7 +214,7 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
         setItems(prev => prev.map(i => i.id === id ? updatedItem : i));
         try {
             await updateInventoryItemInDB(updatedItem);
-            showNotification(`Status changed to ${newStatus}`);
+            showNotification(`Visibility toggled to ${newStatus}`);
         } catch (error) {
             showNotification('Failed to update status', 'error');
             loadAllData();
@@ -358,7 +375,7 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
     const categoriesList = (masters.categories?.length > 0) ? masters.categories : Array.from(new Set(items.map(i => i.category))).filter(Boolean).sort();
     const modelsList = (masters.models?.length > 0) ? masters.models : Array.from(new Set(items.map(i => i.model))).filter(Boolean).sort();
     const uniqueWarehousesList = (masters.warehouses?.length > 0) 
-        ? masters.warehouses.filter(w => w !== 'All Warehouse' && w !== 'Main Warehouse').sort()
+        ? masters.warehouses.filter(w => w !== 'All Warehouse').sort()
         : Array.from(new Set(items.map(i => i.warehouse))).filter(w => w && w !== 'All Warehouse' && w !== 'Main Warehouse').sort();
 
     const filteredItems = useMemo(() => {
@@ -458,8 +475,8 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                     <div className="relative min-w-[160px]">
                         <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} className={selectStyles}>
                             <option value="All Status">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value="Active">Visible</option>
+                            <option value="Inactive">Hidden</option>
                         </select>
                         <ChevronDown size={14} className={iconStyles} />
                     </div>
@@ -486,7 +503,7 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                                 <th className="w-[10%] px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center cursor-pointer" onClick={() => setSortConfig({key: 'quantity', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'})}>
                                     <div className="flex items-center justify-center gap-1.5 group">Stock <ArrowUpDown size={12} className="opacity-40 group-hover:opacity-100" /></div>
                                 </th>
-                                <th className="w-[10%] px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Status</th>
+                                <th className="w-[8%] px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Visible</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -540,10 +557,10 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                                     <td className="px-4 py-3 text-right">
                                         <button 
                                             onClick={() => handleStatusToggle(item.id)}
-                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-90 shadow-sm border ${item.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-600 hover:text-white' : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-600 hover:text-white'}`}
-                                            title={item.status === 'Active' ? 'Mark Inactive' : 'Mark Active'}
+                                            className={`p-1.5 rounded-lg transition-all active:scale-90 shadow-sm border ${item.status === 'Active' ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                                            title={item.status === 'Active' ? 'Mark Hidden' : 'Mark Visible'}
                                         >
-                                            {item.status === 'Active' ? 'Active' : 'Inactive'}
+                                            {item.status === 'Active' ? <CheckCircle size={16} strokeWidth={3} /> : <AlertCircle size={16} strokeWidth={3} />}
                                         </button>
                                     </td>
                                 </tr>

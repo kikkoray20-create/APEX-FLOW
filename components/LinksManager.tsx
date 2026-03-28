@@ -284,7 +284,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
   }, [broadcastType, broadcastGroups, customers, recipientSearch]);
 
   if (simulationMode && activeLink) {
-      const allowedInventory = inventory.filter(i => i.status !== 'Inactive' && i.warehouse === activeLink.warehouse && (activeLink.allowedModels || []).includes(i.id));
+      const allowedInventory = inventory.filter(i => i.status !== 'Inactive' && (activeLink.allowedModels || []).includes(i.id));
       return <CustomerPortal storeName={activeLink.title} status={activeLink.status} onClose={() => setSimulationMode(false)} inventory={allowedInventory} allCustomers={customers} instanceId={activeLink.instanceId} />;
   }
 
@@ -344,7 +344,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
                         </div>
                     </div>
                     <div className="flex-1 overflow-auto custom-scrollbar">
-                        <VisibilityTableReplica items={paginatedVItems} selectedIds={visibilityPane === 'master' ? selectedMasterIds : selectedPortalIds} isAllSelected={isAllViewSelected} onToggleAll={handleToggleSelectAll} onSelect={id => { if (visibilityPane === 'master') setSelectedMasterIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]); else setSelectedPortalIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]); }} />
+                        <VisibilityTableReplica items={paginatedVItems} selectedIds={visibilityPane === 'master' ? selectedMasterIds : selectedPortalIds} isAllSelected={isAllViewSelected} onToggleAll={handleToggleSelectAll} onSelect={id => { if (visibilityPane === 'master') setSelectedMasterIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]); else setSelectedPortalIds(prev => prev.includes(id) ? prev.filter(id => id !== id) : [...prev, id]); }} />
                     </div>
                     <div className="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-8"><div className="flex items-center gap-3"><span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Rows</span><select value={vItemsPerPage} onChange={(e) => { setVItemsPerPage(Number(e.target.value)); setVCurrentPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-1.5 text-[11px] font-black outline-none">{PAGE_SIZE_OPTIONS.map(size => <option key={size} value={size}>{size}</option>)}</select></div><div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Showing <span className="text-slate-900">{totalVItems ? (vCurrentPage - 1) * vItemsPerPage + 1 : 0}-{Math.min(totalVItems, vCurrentPage * vItemsPerPage)}</span> of <span className="text-slate-900">{totalVItems}</span></div></div>

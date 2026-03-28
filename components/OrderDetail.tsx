@@ -238,6 +238,29 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
 
   const totalInvoiceAmount = useMemo(() => items.reduce((s, i) => s + ((i.fulfillQty || 0) * (i.finalPrice || 0)), 0), [items]);
 
+  const syncPortalVisibility = async (itemId: string, newQty: number) => {
+      if (newQty <= 0) {
+          try {
+              const allLinks = await fetchLinks(currentUser.instanceId);
+              const updatePromises = allLinks.map(link => {
+                  const currentAllowed = link.allowedModels || [];
+                  const nextAllowed = currentAllowed.filter(id => id !== itemId);
+                  if (nextAllowed.length !== currentAllowed.length) {
+                      return updateLinkInDB({ ...link, allowedModels: nextAllowed });
+                  }
+                  return null;
+              }).filter(p => p !== null);
+              
+              if (updatePromises.length > 0) {
+                  await Promise.all(updatePromises);
+                  console.log(`System: Item ${itemId} auto-removed from portals due to zero stock`);
+              }
+          } catch (e) {
+              console.error("Portal sync failed during item edit", e);
+          }
+      }
+  };
+
   const reconcileBalance = async (newItems: OrderItem[]) => {
       const isBilled = liveOrder.status === 'checked' || liveOrder.status === 'dispatched';
       if (!isBilled) return;
@@ -281,6 +304,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
                   if (invItem) {
                       const newStock = invItem.quantity - delta;
                       await updateInventoryItemInDB({ ...invItem, quantity: newStock });
+                      
+                      // Auto-remove from portals if stock hits 0 or less
+                      await syncPortalVisibility(invItem.id, newStock);
 
                       const now = new Date();
                       const timestamp = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
@@ -344,6 +370,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
               if (invItem) {
                   const newStock = invItem.quantity - delta;
                   await updateInventoryItemInDB({ ...invItem, quantity: newStock });
+                  
+                  // Auto-remove from portals if stock hits 0 or less
+                  await syncPortalVisibility(invItem.id, newStock);
 
                   await addInventoryLogToDB({
                       id: `bulk-edit-${Date.now()}-${invItem.id}`,
