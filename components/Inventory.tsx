@@ -186,7 +186,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
 
     const filteredLogs = useMemo(() => {
         const searchLower = searchTerm.toLowerCase();
-        return logs.filter(log => {
+        return [...logs].sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()).filter(log => {
             const matchesSearch = (log.remarks || '').toLowerCase().includes(searchLower) ||
                                 (log.shopName || '').toLowerCase().includes(searchLower) ||
                                 (log.items?.some(i => (i.model || '').toLowerCase().includes(searchLower)));
@@ -201,10 +201,9 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
         const searchLower = modalSearch.toLowerCase();
         return inventory.filter(i => 
             ((i.model || '').toLowerCase().includes(searchLower) || 
-             (i.brand || '').toLowerCase().includes(searchLower)) &&
-            !stagedItems.some(si => si.item.id === i.id)
+             (i.brand || '').toLowerCase().includes(searchLower))
         ).slice(0, 15);
-    }, [inventory, modalSearch, stagedItems]);
+    }, [inventory, modalSearch]);
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
     const paginatedLogs = useMemo(() => {
@@ -291,28 +290,21 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                     <table className="w-full text-left table-fixed min-w-[1200px]">
                         <thead>
                             <tr className="bg-slate-50/80 border-b border-slate-100">
-                                <th className="w-[18%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Target Node</th>
-                                <th className="w-[10%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Movement</th>
-                                <th className="w-[10%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Lines</th>
-                                <th className="w-[10%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Net Qty</th>
-                                <th className="w-[27%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Audit Remark</th>
-                                <th className="w-[15%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
+                                <th className="w-[20%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Movement</th>
+                                <th className="w-[15%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Lines</th>
+                                <th className="w-[15%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Net Qty</th>
+                                <th className="w-[30%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Audit Remark</th>
+                                <th className="w-[20%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
                                 <th className="w-[10%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {loading ? (
-                                <tr><td colSpan={7} className="py-40 text-center"><Loader2 className="animate-spin text-indigo-500 mx-auto" size={32} /><p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-4">Syncing Encrypted Logs...</p></td></tr>
+                                <tr><td colSpan={6} className="py-40 text-center"><Loader2 className="animate-spin text-indigo-500 mx-auto" size={32} /><p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-4">Syncing Encrypted Logs...</p></td></tr>
                             ) : paginatedLogs.length === 0 ? (
-                                <tr><td colSpan={7} className="py-40 text-center"><History size={48} className="text-slate-100 mx-auto mb-4" /><p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">No audit records found in database</p></td></tr>
+                                <tr><td colSpan={6} className="py-40 text-center"><History size={48} className="text-slate-100 mx-auto mb-4" /><p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">No audit records found in database</p></td></tr>
                             ) : paginatedLogs.map((log) => (
                                 <tr key={log.id} className="hover:bg-slate-50/50 transition-all group">
-                                    <td className="px-8 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-[10px] shadow-sm shrink-0 uppercase">{log.shopName?.charAt(0) || 'A'}</div>
-                                            <p className="text-[13px] font-black text-slate-800 uppercase truncate tracking-tight">{log.shopName}</p>
-                                        </div>
-                                    </td>
                                     <td className="px-8 py-4 text-center">
                                         <span className={`inline-flex px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${log.status === 'Added' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                                             {log.status === 'Added' ? 'Inflow' : 'Outward'}
@@ -557,8 +549,17 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                 >
                                     Discard
                                 </button>
+                                <div className="flex-1">
+                                    <input 
+                                        type="text"
+                                        placeholder="ENTER REMARKS (REQUIRED)..."
+                                        value={adjRemarks}
+                                        onChange={(e) => setAdjRemarks(e.target.value)}
+                                        className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase outline-none focus:border-indigo-400 shadow-sm"
+                                    />
+                                </div>
                                 <button 
-                                    disabled={stagedItems.length === 0 || isSaving} 
+                                    disabled={stagedItems.length === 0 || isSaving || !adjRemarks} 
                                     onClick={handleCommitTransaction} 
                                     className={`px-10 py-3.5 rounded-xl font-black uppercase text-[11px] tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 ${transactionType === 'Add' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-rose-600 text-white hover:bg-rose-700'}`}
                                 >
