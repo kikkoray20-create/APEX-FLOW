@@ -377,7 +377,7 @@ const AppContent: React.FC = () => {
                         }
 
                         // 2. Revert Inventory Stock & Remove History
-                        const currentInventory = await fetchInventory(currentUser?.instanceId);
+                        const currentInventory = await fetchInventory();
                         for (const orderItem of orderItemsForLogic) {
                             if (orderItem.fulfillQty <= 0) continue;
 
