@@ -475,8 +475,8 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                     <div className="relative min-w-[160px]">
                         <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} className={selectStyles}>
                             <option value="All Status">All Status</option>
-                            <option value="Active">Visible</option>
-                            <option value="Inactive">Hidden</option>
+                            <option value="Active">ACTIVE</option>
+                            <option value="Inactive">INACTIVE</option>
                         </select>
                         <ChevronDown size={14} className={iconStyles} />
                     </div>
@@ -503,7 +503,7 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                                 <th className="w-[10%] px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center cursor-pointer" onClick={() => setSortConfig({key: 'quantity', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'})}>
                                     <div className="flex items-center justify-center gap-1.5 group">Stock <ArrowUpDown size={12} className="opacity-40 group-hover:opacity-100" /></div>
                                 </th>
-                                <th className="w-[8%] px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Visible</th>
+                                <th className="w-[8%] px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -557,10 +557,10 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                                     <td className="px-4 py-3 text-right">
                                         <button 
                                             onClick={() => handleStatusToggle(item.id)}
-                                            className={`p-1.5 rounded-lg transition-all active:scale-90 shadow-sm border ${item.status === 'Active' ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
-                                            title={item.status === 'Active' ? 'Mark Hidden' : 'Mark Visible'}
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-90 shadow-sm border ${item.status === 'Active' ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white' : 'bg-slate-50 text-slate-400 border-slate-200'}`}
+                                            title={item.status === 'Active' ? 'Mark INACTIVE' : 'Mark ACTIVE'}
                                         >
-                                            {item.status === 'Active' ? <CheckCircle size={16} strokeWidth={3} /> : <AlertCircle size={16} strokeWidth={3} />}
+                                            {item.status === 'Active' ? 'ACTIVE' : 'INACTIVE'}
                                         </button>
                                     </td>
                                 </tr>

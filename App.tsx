@@ -554,7 +554,7 @@ const AppContent: React.FC = () => {
           );
       }
       if (activePortalLink) {
-          const allowedInventory = allInventory.filter(i => (activePortalLink.allowedModels || []).includes(i.id));
+          const allowedInventory = allInventory.filter(i => i.status !== 'Inactive' && (activePortalLink.allowedModels || []).includes(i.id));
           const portalWarehouse = activePortalLink.warehouse || activePortalLink.title || 'Main Warehouse';
           return (
               <CustomerPortal 
