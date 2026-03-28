@@ -16,8 +16,6 @@ import { fetchLinks, addLinkToDB, updateLinkInDB, deleteLinkFromDB, fetchInvento
 import { useNotification } from '../context/NotificationContext';
 import CustomerPortal from './CustomerPortal';
 
-const PAGE_SIZE_OPTIONS = [100, 200, 300, 500, 1000];
-
 interface LinkEntry {
     id: string; 
     title: string; 
@@ -25,7 +23,6 @@ interface LinkEntry {
     status: 'Enabled' | 'Disabled'; 
     createdDate: string; 
     warehouse: string;
-    allowedModels?: string[];
     instanceId?: string;
 }
 
@@ -47,20 +44,12 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isManageModelsOpen, setIsManageModelsOpen] = useState(false);
-  const [visibilityPane, setVisibilityPane] = useState<'master' | 'link'>('master');
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
   
   const [activeLink, setActiveLink] = useState<LinkEntry | null>(null);
   const [newLinkData, setNewLinkData] = useState({ title: '', warehouse: 'Main Warehouse' });
   const [isSaving, setIsSaving] = useState(false);
   const [simulationMode, setSimulationMode] = useState(false);
-  
-  const [vSearch, setVSearch] = useState('');
-  const [vCurrentPage, setVCurrentPage] = useState(1);
-  const [vItemsPerPage, setVItemsPerPage] = useState(100);
-  const [selectedMasterIds, setSelectedMasterIds] = useState<string[]>([]);
-  const [selectedPortalIds, setSelectedPortalIds] = useState<string[]>([]);
 
   const [broadcastType, setBroadcastType] = useState<'groups' | 'customers'>('groups');
   const [selectedBroadcastIds, setSelectedBroadcastIds] = useState<string[]>([]);
@@ -124,7 +113,6 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
         status: 'Enabled',
         createdDate: new Date().toLocaleDateString('en-GB'),
         warehouse: newLinkData.warehouse,
-        allowedModels: [],
         instanceId: currentUser.instanceId
     };
     await addLinkToDB(newLink);
@@ -188,83 +176,6 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
     showNotification('Access revoked', 'error');
   };
 
-  const handleAddToLink = async () => {
-    if (!activeLink || selectedMasterIds.length === 0) return;
-    const currentAllowed = activeLink.allowedModels || [];
-    const newAllowed = Array.from(new Set([...currentAllowed, ...selectedMasterIds]));
-    const updated = { ...activeLink, allowedModels: newAllowed };
-    setActiveLink(updated);
-    setLinks(links.map(l => l.id === activeLink.id ? updated : l));
-    setSelectedMasterIds([]);
-    await updateLinkInDB(updated);
-    showNotification(`${selectedMasterIds.length} items added`);
-  };
-
-  const handleRemoveFromLink = async () => {
-    if (!activeLink || selectedPortalIds.length === 0) return;
-    const currentAllowed = activeLink.allowedModels || [];
-    const newAllowed = currentAllowed.filter(id => !selectedPortalIds.includes(id));
-    const updated = { ...activeLink, allowedModels: newAllowed };
-    setActiveLink(updated);
-    setLinks(links.map(l => l.id === activeLink.id ? updated : l));
-    setSelectedPortalIds([]);
-    await updateLinkInDB(updated);
-    showNotification(`${selectedPortalIds.length} items removed`);
-  };
-
-  const fullMasterList = useMemo(() => {
-    const allowedIds = activeLink?.allowedModels || [];
-    return inventory.filter(i => 
-        i.status !== 'Inactive' && 
-        !allowedIds.includes(i.id) &&
-        ((i.model || '').toLowerCase().includes(vSearch.toLowerCase()) || 
-         (i.brand || '').toLowerCase().includes(vSearch.toLowerCase()) ||
-         (i.category || '').toLowerCase().includes(vSearch.toLowerCase()))
-    );
-  }, [inventory, activeLink, vSearch]);
-
-  const fullPortalList = useMemo(() => {
-    const allowedIds = activeLink?.allowedModels || [];
-    return inventory.filter(i => 
-        i.status !== 'Inactive' && 
-        allowedIds.includes(i.id) &&
-        ((i.model || '').toLowerCase().includes(vSearch.toLowerCase()) || 
-         (i.brand || '').toLowerCase().includes(vSearch.toLowerCase()) ||
-         (i.category || '').toLowerCase().includes(vSearch.toLowerCase()))
-    );
-  }, [inventory, activeLink, vSearch]);
-
-  const currentViewList = visibilityPane === 'master' ? fullMasterList : fullPortalList;
-  const totalVItems = currentViewList.length;
-  const totalVPages = Math.ceil(totalVItems / vItemsPerPage);
-  const paginatedVItems = useMemo(() => {
-    const start = (vCurrentPage - 1) * vItemsPerPage;
-    return currentViewList.slice(start, start + vItemsPerPage);
-  }, [currentViewList, vCurrentPage, vItemsPerPage]);
-
-  // Bulk Select Logic
-  const isAllViewSelected = useMemo(() => {
-      const selectedList = visibilityPane === 'master' ? selectedMasterIds : selectedPortalIds;
-      return paginatedVItems.length > 0 && paginatedVItems.every(i => selectedList.includes(i.id));
-  }, [paginatedVItems, selectedMasterIds, selectedPortalIds, visibilityPane]);
-
-  const handleToggleSelectAll = () => {
-      const currentIds = paginatedVItems.map(i => i.id);
-      if (visibilityPane === 'master') {
-          if (isAllViewSelected) {
-              setSelectedMasterIds(prev => prev.filter(id => !currentIds.includes(id)));
-          } else {
-              setSelectedMasterIds(prev => Array.from(new Set([...prev, ...currentIds])));
-          }
-      } else {
-          if (isAllViewSelected) {
-              setSelectedPortalIds(prev => prev.filter(id => !currentIds.includes(id)));
-          } else {
-              setSelectedPortalIds(prev => Array.from(new Set([...prev, ...currentIds])));
-          }
-      }
-  };
-
   const handleSendBroadcast = () => {
       if (selectedBroadcastIds.length === 0) { showNotification('Please select recipients', 'error'); return; }
       showNotification(`Broadcast initiated for ${selectedBroadcastIds.length} recipients`, 'success');
@@ -284,8 +195,9 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
   }, [broadcastType, broadcastGroups, customers, recipientSearch]);
 
   if (simulationMode && activeLink) {
-      const allowedInventory = inventory.filter(i => i.status !== 'Inactive' && (activeLink.allowedModels || []).includes(i.id));
-      return <CustomerPortal storeName={activeLink.title} status={activeLink.status} onClose={() => setSimulationMode(false)} inventory={allowedInventory} allCustomers={customers} instanceId={activeLink.instanceId} />;
+      const portalWarehouse = activeLink.warehouse || activeLink.title || 'Main Warehouse';
+      const allowedInventory = inventory.filter(i => i.warehouse === portalWarehouse && i.status === 'Active');
+      return <CustomerPortal storeName={activeLink.title} status={activeLink.status} onClose={() => setSimulationMode(false)} inventory={allowedInventory} allCustomers={customers} instanceId={activeLink.instanceId} warehouse={portalWarehouse} />;
   }
 
   return (
@@ -310,10 +222,9 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
                     <div className="flex items-center gap-2"><button onClick={() => handleToggleStatus(link)} className="p-2.5 bg-white text-slate-400 border border-slate-100 rounded-xl hover:text-rose-500">{link.status === 'Enabled' ? <Ban size={18}/> : <CheckCircle size={18}/>}</button><button onClick={() => handleDelete(link.id)} className="p-2.5 text-slate-300 hover:text-rose-500 rounded-xl"><Trash2 size={18}/></button></div>
                 </div>
                 <div className="bg-slate-50 border border-slate-100 p-2 rounded-2xl flex items-center gap-3 mb-8"><div className="flex-1 min-w-0 pl-4"><p className="text-[8px] font-black text-slate-400 uppercase mb-0.5">Code</p><p className="text-sm font-black text-slate-900 tracking-[0.1em] truncate">{link.code}</p></div><button onClick={() => handleCopy(link)} className={`px-4 py-3 rounded-xl transition-all active:scale-90 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 ${copiedId === link.id ? 'bg-emerald-50 text-white' : 'bg-white text-indigo-600 shadow-sm border border-slate-100'}`}>{copiedId === link.id ? <Check size={14}/> : <Copy size={14}/>}{copiedId === link.id ? 'Copied' : 'Copy'}</button></div>
-                <div className="flex items-center gap-4 mb-8 text-[11px] font-black text-slate-500 uppercase tracking-widest mt-auto"><div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg"><Package size={14}/><span>{(link.allowedModels || []).length} Items</span></div><span className="text-[10px] text-slate-300">{link.createdDate}</span></div>
+                <div className="flex items-center gap-4 mb-8 text-[11px] font-black text-slate-500 uppercase tracking-widest mt-auto"><span className="text-[10px] text-slate-300">{link.createdDate}</span></div>
                 <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                        <button onClick={() => { setActiveLink(link); setVisibilityPane('master'); setVSearch(''); setSelectedMasterIds([]); setSelectedPortalIds([]); setIsManageModelsOpen(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-500 transition-all"><Settings2 size={16}/> Visibility</button>
+                    <div className="grid grid-cols-1 gap-3">
                         <button onClick={() => { setActiveLink(link); setSimulationMode(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-100 transition-all"><Smartphone size={16}/> Simulate</button>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -324,36 +235,6 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
             </div>
         ))}
       </div>
-
-      {isManageModelsOpen && activeLink && (
-        <div className="fixed inset-0 bg-[#f8fafc] z-[160] flex flex-col animate-in slide-in-from-bottom-5 duration-300">
-            <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shrink-0 shadow-sm">
-                <div className="flex items-center gap-5">
-                    <button onClick={() => setIsManageModelsOpen(false)} className="p-3 bg-slate-50 border border-slate-200 text-slate-400 hover:text-indigo-600 rounded-xl shadow-sm"><ArrowLeft size={20}/></button>
-                    <div><h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">Visibility Logic Console</h2><p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1.5 italic">Managing Portal: <span className="text-indigo-600">{activeLink.title}</span></p></div>
-                </div>
-                <button onClick={() => setIsManageModelsOpen(false)} className="w-12 h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><X size={24}/></button>
-            </div>
-            <div className="flex-1 overflow-hidden p-6 bg-slate-50 flex flex-col gap-6">
-                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
-                    <div className="px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100 shrink-0">
-                        <div className="flex p-0.5 bg-slate-100 rounded-xl border border-slate-200 min-w-[300px]"><button onClick={() => { setVisibilityPane('master'); setVSearch(''); setVCurrentPage(1); }} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${visibilityPane === 'master' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>Global Catalog</button><button onClick={() => { setVisibilityPane('link'); setVSearch(''); setVCurrentPage(1); }} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${visibilityPane === 'link' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>Store Distribution</button></div>
-                        <div className="flex items-center gap-3">
-                            <div className="relative w-64 group"><input type="text" value={vSearch} onChange={(e) => { setVSearch(e.target.value); setVCurrentPage(1); }} placeholder="Find models..." className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold uppercase outline-none focus:bg-white focus:border-indigo-500 transition-all"/><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" /></div>
-                            <button disabled={visibilityPane === 'master' ? selectedMasterIds.length === 0 : selectedPortalIds.length === 0} onClick={visibilityPane === 'master' ? handleAddToLink : handleRemoveFromLink} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ (visibilityPane === 'master' ? selectedMasterIds.length > 0 : selectedPortalIds.length > 0) ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50 text-slate-300 border border-slate-200' }`}>{visibilityPane === 'master' ? 'Add Selected' : 'Remove Selected'}</button>
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-auto custom-scrollbar">
-                        <VisibilityTableReplica items={paginatedVItems} selectedIds={visibilityPane === 'master' ? selectedMasterIds : selectedPortalIds} isAllSelected={isAllViewSelected} onToggleAll={handleToggleSelectAll} onSelect={id => { if (visibilityPane === 'master') setSelectedMasterIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]); else setSelectedPortalIds(prev => prev.includes(id) ? prev.filter(id => id !== id) : [...prev, id]); }} />
-                    </div>
-                    <div className="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
-                        <div className="flex items-center gap-8"><div className="flex items-center gap-3"><span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Rows</span><select value={vItemsPerPage} onChange={(e) => { setVItemsPerPage(Number(e.target.value)); setVCurrentPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-1.5 text-[11px] font-black outline-none">{PAGE_SIZE_OPTIONS.map(size => <option key={size} value={size}>{size}</option>)}</select></div><div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Showing <span className="text-slate-900">{totalVItems ? (vCurrentPage - 1) * vItemsPerPage + 1 : 0}-{Math.min(totalVItems, vCurrentPage * vItemsPerPage)}</span> of <span className="text-slate-900">{totalVItems}</span></div></div>
-                        <div className="flex items-center gap-2"><button disabled={vCurrentPage === 1} onClick={() => setVCurrentPage(p => Math.max(1, p - 1))} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-all"><ChevronLeft size={18}/></button><div className="flex items-center gap-1">{Array.from({ length: Math.min(5, totalVPages) }, (_, i) => (<button key={i} onClick={() => setVCurrentPage(i+1)} className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${vCurrentPage === i+1 ? 'bg-indigo-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-500'}`}>{i+1}</button>))}</div><button disabled={vCurrentPage === totalVPages || totalVPages === 0} onClick={() => setVCurrentPage(p => Math.min(totalVPages, p + 1))} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-all"><ChevronRightIcon size={18}/></button></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-      )}
 
       {/* EDIT MODAL */}
       {isEditModalOpen && activeLink && (
@@ -438,46 +319,5 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
     </div>
   );
 };
-
-const VisibilityTableReplica: React.FC<{ items: InventoryItem[], selectedIds: string[], isAllSelected: boolean, onToggleAll: () => void, onSelect: (id: string) => void }> = ({ items, selectedIds, isAllSelected, onToggleAll, onSelect }) => (
-    <div className="bg-white">
-        <table className="w-full text-left table-fixed min-w-[1200px]">
-            <thead className="sticky top-0 z-20">
-                <tr className="bg-slate-100/80 backdrop-blur-md border-b border-slate-200">
-                    <th className="w-[45px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">
-                        <button onClick={onToggleAll} className="flex justify-center w-full focus:outline-none" title="Select All in Current View">
-                            <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${isAllSelected ? 'bg-indigo-600 border-indigo-600 shadow-sm' : 'bg-white border-slate-300 hover:border-indigo-400'}`}>
-                                {isAllSelected && <Check size={12} strokeWidth={4} className="text-white" />}
-                            </div>
-                        </button>
-                    </th>
-                    <th className="w-[120px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Brand</th>
-                    <th className="w-[120px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Quality</th>
-                    <th className="w-[140px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                    <th className="flex-1 px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Model Specification</th>
-                    <th className="w-[120px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Price (₹)</th>
-                    <th className="w-[140px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">In-Hand Stock</th>
-                    <th className="w-[140px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                    <th className="w-[100px] px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">System ID</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-                {items.length === 0 ? (<tr><td colSpan={9} className="py-24 text-center text-slate-300 font-black text-[10px] uppercase tracking-widest">No entries available</td></tr>) : items.map(item => (
-                    <tr key={item.id} onClick={() => onSelect(item.id)} className={`cursor-pointer transition-all duration-100 group ${selectedIds.includes(item.id) ? 'bg-indigo-50/40' : 'hover:bg-slate-50/60'}`}>
-                        <td className="px-4 py-2 text-center"><div className="flex justify-center"><div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-indigo-600 border-indigo-600 shadow-sm' : 'bg-white border-slate-200 group-hover:border-indigo-400'}`}>{selectedIds.includes(item.id) && <Check size={12} strokeWidth={4} className="text-white" />}</div></div></td>
-                        <td className="px-4 py-2"><span className="text-[10px] font-black text-indigo-500 uppercase truncate">{item.brand}</span></td>
-                        <td className="px-4 py-2"><span className="text-[10px] font-black text-emerald-600 uppercase truncate">{item.quality}</span></td>
-                        <td className="px-4 py-2"><span className="text-[10px] font-bold text-slate-400 uppercase truncate">{item.category || 'GENERAL'}</span></td>
-                        <td className="px-4 py-2"><span className="text-[11px] font-black text-slate-800 uppercase truncate leading-none">{item.model}</span></td>
-                        <td className="px-4 py-2 text-right"><span className="text-[11px] font-black text-slate-700 font-mono">₹{(item.price || 0).toFixed(1)}</span></td>
-                        <td className="px-4 py-2 text-center"><span className={`text-[12px] font-black tracking-tighter ${ (item.quantity || 0) <= 0 ? 'text-rose-500' : (item.quantity || 0) < 10 ? 'text-amber-500' : 'text-emerald-600' }`}>{item.quantity || 0} PCS</span></td>
-                        <td className="px-4 py-2 text-center">{(item.quantity || 0) <= 0 ? (<span className="inline-flex px-2 py-1 bg-rose-50 text-rose-600 border border-rose-100 rounded text-[8px] font-black uppercase tracking-tighter">OUT OF STOCK</span>) : (<span className="inline-flex px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[8px] font-black uppercase tracking-tighter">LIVE READY</span>)}</td>
-                        <td className="px-4 py-2 text-right"><span className="text-[8px] font-mono font-black text-slate-200 uppercase">{(item.id || '').toString().slice(-6)}</span></td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
-);
 
 export default LinksManager;

@@ -230,26 +230,6 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // Helper to remove out-of-stock items from portals
-  const syncPortalVisibilityOnStockEmpty = async (itemId: string, newQty: number) => {
-      if (newQty <= 0) {
-          try {
-              const allLinks = await fetchLinks(currentUser?.instanceId);
-              const updatePromises = allLinks.map(link => {
-                  const currentAllowed = link.allowedModels || [];
-                  const nextAllowed = currentAllowed.filter((id: string) => id !== itemId);
-                  if (nextAllowed.length !== currentAllowed.length) {
-                      return updateLinkInDB({ ...link, allowedModels: nextAllowed });
-                  }
-                  return null;
-              }).filter(p => p !== null);
-              if (updatePromises.length > 0) await Promise.all(updatePromises);
-          } catch (e) {
-              console.error("Portal visibility sync failed", e);
-          }
-      }
-  };
-
   // STEP 1: Global filtering (Date, Mode, Warehouse, Search)
   const baseFilteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -406,6 +386,8 @@ const AppContent: React.FC = () => {
             }
             // BILLING LOGIC: Deduct credit & stock & create history when reaching billed status for first time
             else if (isBillingStatus && wasNotBillingStatus) {
+                console.log("DEBUG: Entering billing logic for order", id, "Status:", status);
+                
                 // 1. Balance Deduction
                 try {
                     const allCusts = await fetchCustomers(currentUser?.instanceId);
@@ -418,6 +400,8 @@ const AppContent: React.FC = () => {
                         await updateCustomerInDB({ ...cust, balance: newBalance });
                         billedAmount = currentTotal;
                         showNotification(`₹${currentTotal.toFixed(1)} deducted from balance`, 'success');
+                    } else {
+                        console.log("DEBUG: Customer not found for balance deduction");
                     }
                 } catch (e) {
                     console.error("Balance deduction failed", e);
@@ -426,11 +410,15 @@ const AppContent: React.FC = () => {
                 // 2. Inventory Deduction & Create Sale History
                 try {
                     const currentInventory = await fetchInventory(currentUser?.instanceId);
+                    console.log("DEBUG: Current Inventory fetched, count:", currentInventory.length);
                     const now = new Date();
                     const timestamp = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 
                     for (const orderItem of orderItemsForLogic) {
-                        if (orderItem.fulfillQty <= 0) continue;
+                        if (orderItem.fulfillQty <= 0) {
+                            console.log("DEBUG: Skipping item with 0 fulfillQty:", orderItem.model);
+                            continue;
+                        }
 
                         const invItem = currentInventory.find(i => 
                             i.brand.toUpperCase().trim() === orderItem.brand.toUpperCase().trim() && 
@@ -439,9 +427,9 @@ const AppContent: React.FC = () => {
                         );
 
                         if (invItem) {
+                            console.log("DEBUG: Found inventory item:", invItem.model, "Current Qty:", invItem.quantity, "Deducting:", orderItem.fulfillQty);
                             const newQty = invItem.quantity - orderItem.fulfillQty;
                             await updateInventoryItemInDB({ ...invItem, quantity: newQty });
-                            await syncPortalVisibilityOnStockEmpty(invItem.id, newQty);
                             
                             // CREATE PREDICTABLE HISTORY LOG ID
                             const saleLogId = `sale-${existingOrder.id}-${invItem.id}`;
@@ -554,8 +542,8 @@ const AppContent: React.FC = () => {
           );
       }
       if (activePortalLink) {
-          const allowedInventory = allInventory.filter(i => (activePortalLink.allowedModels || []).includes(i.id));
           const portalWarehouse = activePortalLink.warehouse || activePortalLink.title || 'Main Warehouse';
+          const allowedInventory = allInventory.filter(i => i.warehouse === portalWarehouse && i.status === 'Active');
           return (
               <CustomerPortal 
                   storeName={activePortalLink.title}
