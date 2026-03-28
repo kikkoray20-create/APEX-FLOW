@@ -1182,27 +1182,6 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
 
                             {/* Viewer Workspace */}
                             <div className="flex-1 flex bg-[#525659] overflow-hidden print:bg-white">
-                                {/* Sidebar Thumbnails */}
-                                <div className="w-[180px] hidden md:flex flex-col bg-[#3c4043] border-r border-black/20 p-4 shrink-0 overflow-y-auto custom-scrollbar items-center no-print">
-                                    <div 
-                                        onClick={() => setZoomLevel(100)}
-                                        className="w-full aspect-[1/1.4] bg-white border-2 border-indigo-500 shadow-xl rounded p-2 flex flex-col items-center justify-center mb-2 cursor-pointer hover:brightness-95 transition-all"
-                                    >
-                                        <div className="scale-[0.12] origin-top w-[600px] h-[800px] pointer-events-none opacity-60">
-                                            <div className="w-full h-full bg-white text-black p-10 flex flex-col items-center justify-center">
-                                                <h1 className="text-5xl font-black text-center">{superAdminName}</h1>
-                                                <div className="h-4 w-60 bg-black mt-8"></div>
-                                                <div className="mt-20 space-y-4 w-full">
-                                                    <div className="h-8 w-full bg-slate-100"></div>
-                                                    <div className="h-8 w-full bg-slate-100"></div>
-                                                    <div className="h-8 w-full bg-slate-100"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className="text-[10px] text-white/50 font-bold">1</span>
-                                </div>
-
                                 {/* Main Document Canvas */}
                                 <div className="flex-1 overflow-auto p-4 md:p-12 flex flex-col items-center custom-scrollbar print:p-0 print:overflow-visible">
                                     <div 
@@ -1285,7 +1264,6 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
                                         </div>
 
                                         <div className="text-center mt-12 pt-8 border-t border-slate-100">
-                                            <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Thank You For Ordering</h3>
                                             <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-[0.2em]">Computer Generated Digital Document Node Signature.</p>
                                         </div>
                                     </div>

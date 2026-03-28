@@ -679,13 +679,73 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
 
 const SearchableSelect: React.FC<{ options: string[], value: string, onChange: (val: string) => void, placeholder: string }> = ({ options, value, onChange, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState(value);
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setSearch(value);
+    }, [value]);
+
     const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
-    useEffect(() => { const handleClickOutside = (e: MouseEvent) => { if (containerRef.current && !containerRef.current.contains(e.target as Node)) { setIsOpen(false); setSearch(''); } }; document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside); }, []);
-    useEffect(() => { if (isOpen && inputRef.current) inputRef.current.focus(); }, [isOpen]);
-    return (<div className="relative" ref={containerRef}><div onClick={() => setIsOpen(!isOpen)} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold uppercase text-slate-800 outline-none flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-all shadow-inner"><span className={value ? 'text-slate-800' : 'text-slate-300'}>{value || placeholder}</span><ChevronDown size={18} className={`text-slate-300 transition-transform ${isOpen ? 'rotate-180' : ''}`} /></div>{isOpen && (<div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-200 rounded-[2rem] shadow-2xl z-[160] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5"><div className="p-4 border-b border-slate-100 bg-slate-50/50"><div className="relative group"><Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" /><input ref={inputRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:ring-4 focus:ring-indigo-50/10 transition-all" /></div></div><div className="max-h-60 overflow-y-auto custom-scrollbar bg-white">{filtered.length === 0 ? (<div className="py-12 text-center text-slate-300 text-[10px] font-black uppercase tracking-widest">No entries</div>) : (filtered.map(opt => (<button key={opt} type="button" onClick={() => { onChange(opt); setIsOpen(false); setSearch(''); }} className={`w-full text-left px-7 py-3.5 hover:bg-indigo-50 transition-all flex items-center justify-between group ${value === opt ? 'bg-indigo-50/50' : ''}`}><span className={`text-xs font-black uppercase tracking-tight ${value === opt ? 'text-indigo-600' : 'text-slate-600 group-hover:text-indigo-600'}`}>{opt}</span>{value === opt && <Check size={14} className="text-indigo-600" strokeWidth={4} />}</button>)))}</div></div>)}</div>);
+
+    useEffect(() => { 
+        const handleClickOutside = (e: MouseEvent) => { 
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) { 
+                setIsOpen(false); 
+                if (!options.includes(search)) {
+                    setSearch(value);
+                }
+            } 
+        }; 
+        document.addEventListener('mousedown', handleClickOutside); 
+        return () => document.removeEventListener('mousedown', handleClickOutside); 
+    }, [search, value, options]);
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <div className="relative">
+                <input 
+                    ref={inputRef}
+                    type="text" 
+                    value={search} 
+                    onChange={e => {
+                        setSearch(e.target.value);
+                        setIsOpen(true);
+                        if (options.includes(e.target.value)) {
+                            onChange(e.target.value);
+                        } else {
+                            onChange('');
+                        }
+                    }} 
+                    onFocus={() => {
+                        setIsOpen(true);
+                        inputRef.current?.select();
+                    }}
+                    placeholder={placeholder} 
+                    className="w-full pl-6 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner" 
+                />
+                <ChevronDown size={18} className={`absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+            {isOpen && filtered.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[160] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5">
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar bg-white">
+                        {filtered.map(opt => (
+                            <button 
+                                key={opt} 
+                                type="button" 
+                                onClick={() => { onChange(opt); setIsOpen(false); setSearch(opt); }} 
+                                className={`w-full text-left px-6 py-3.5 hover:bg-indigo-50 transition-all flex items-center justify-between group ${value === opt ? 'bg-indigo-50/50' : ''}`}
+                            >
+                                <span className={`text-xs font-black uppercase tracking-tight ${value === opt ? 'text-indigo-600' : 'text-slate-600 group-hover:text-indigo-600'}`}>{opt}</span>
+                                {value === opt && <Check size={14} className="text-indigo-600" strokeWidth={4} />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 const ModalField: React.FC<{ label: string; required?: boolean; children: React.ReactNode }> = ({ label, required, children }) => (
