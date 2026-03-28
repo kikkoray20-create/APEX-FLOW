@@ -426,14 +426,13 @@ const AppContent: React.FC = () => {
 
                 // 2. Inventory Deduction & Create Sale Hist
                  try {
-                  const currentInventory = await fetchInventory(currentUser?.instanceId);
-                  console.log("DEBUG: Inventory fetched for instanceId:", currentUser?.instanceId, "Count:", currentInventory.length);
+                  
                     const now = new Date();
                     const timestamp = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-
+                    const currentInventory = await fetchInventory(); 
+                     console.log("DEBUG: Inventory fetched WITHOUT instanceId filter. Count:", currentInventory.length);
                     for (const orderItem of orderItemsForLogic) {
                         console.log("DEBUG: Processing orderItem:", orderItem.model, "fulfillQty:", orderItem.fulfillQty);
-                        // Line 435 ke upar add karein
                         console.log("DEBUG: Searching for:", orderItem.brand, orderItem.model, orderItem.quality);
                         console.log("DEBUG: First few inventory items:", currentInventory.slice(0, 3).map(i => `${i.brand}-${i.model}-${i.quality}`));
                         if (orderItem.fulfillQty <= 0) continue;
