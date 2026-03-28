@@ -432,6 +432,9 @@ const AppContent: React.FC = () => {
 
                     for (const orderItem of orderItemsForLogic) {
                         console.log("DEBUG: Processing orderItem:", orderItem.model, "fulfillQty:", orderItem.fulfillQty);
+                        // Line 435 ke upar add karein
+                        console.log("DEBUG: Searching for:", orderItem.brand, orderItem.model, orderItem.quality);
+                        console.log("DEBUG: First few inventory items:", currentInventory.slice(0, 3).map(i => `${i.brand}-${i.model}-${i.quality}`));
                         if (orderItem.fulfillQty <= 0) continue;
 
                         const invItem = currentInventory.find(i => 
