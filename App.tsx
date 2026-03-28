@@ -424,9 +424,10 @@ const AppContent: React.FC = () => {
                     console.error("Balance deduction failed", e);
                 }
 
-                // 2. Inventory Deduction & Create Sale History
-                try {
-                    const currentInventory = await fetchInventory(currentUser?.instanceId);
+                // 2. Inventory Deduction & Create Sale Hist
+                 try {
+                  const currentInventory = await fetchInventory(currentUser?.instanceId);
+                  console.log("DEBUG: Inventory fetched for instanceId:", currentUser?.instanceId, "Count:", currentInventory.length);
                     const now = new Date();
                     const timestamp = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 
