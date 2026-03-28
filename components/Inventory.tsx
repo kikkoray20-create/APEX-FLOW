@@ -201,10 +201,12 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
 
     const modalFilteredInventory = useMemo(() => {
         const searchLower = modalSearch.toLowerCase();
-        return inventory.filter(i => 
+        const filtered = inventory.filter(i => 
             ((i.model || '').toLowerCase().includes(searchLower) || 
              (i.brand || '').toLowerCase().includes(searchLower))
         ).slice(0, 15);
+        console.log('Inventory:', inventory, 'Filtered:', filtered, 'Search:', modalSearch);
+        return filtered;
     }, [inventory, modalSearch]);
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);

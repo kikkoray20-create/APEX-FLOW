@@ -289,40 +289,39 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       {/* REGISTER / EDIT MODAL */}
       {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300">
-              <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-100 animate-in zoom-in-95">
-                  <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                      <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shrink-0">
-                              {editingUser ? <Shield size={28} /> : <UserPlus size={28} />}
+              <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+                  <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                      <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shrink-0">
+                              {editingUser ? <Shield size={24} /> : <UserPlus size={24} />}
                           </div>
                           <div>
-                              <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight leading-none">
+                              <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight leading-none">
                                   {editingUser ? 'Access Profile Update' : 'New Personnel Enlistment'}
                               </h3>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Operator Security Protocol</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1.5">Operator Security Protocol</p>
                           </div>
                       </div>
-                      <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all hover:rotate-90 shadow-sm">
-                          <X size={24} />
+                      <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all hover:rotate-90 shadow-sm">
+                          <X size={20} />
                       </button>
                   </div>
                   
-                  <div className="p-10 bg-white">
-                    <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-12">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  <div className="p-8 bg-white overflow-y-auto custom-scrollbar flex-1">
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-8">
+                        <div className="grid grid-cols-1 gap-8">
                             {/* IDENTITY SECTION */}
-                            <div className="space-y-8">
+                            <div className="space-y-6">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <ShieldAlert size={18} className="text-indigo-500" />
-                                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Primary identity</h4>
+                                    <ShieldAlert size={16} className="text-indigo-500" />
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Primary identity</h4>
                                 </div>
                                 
-                                <div className="space-y-6">
+                                <div className="space-y-5">
                                     <div className="space-y-2">
                                         <label className={labelStyles}>Full legal Name</label>
                                         <div className="relative">
                                             <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={inputStyles} placeholder="ENTER FULL NAME..." />
-                                            {/* Changed User icon to UserIcon to fix naming conflict */}
                                             <UserIcon size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" />
                                         </div>
                                     </div>
@@ -334,7 +333,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                                             <Smartphone size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" />
                                         </div>
                                     </div>
-
+                                    
                                     <div className="space-y-2">
                                         <label className={labelStyles}>Deployment Hub / City</label>
                                         <div className="relative">
@@ -346,13 +345,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                             </div>
 
                             {/* CLEARANCE SECTION */}
-                            <div className="space-y-8 bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100">
+                            <div className="space-y-6 bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <KeyRound size={18} className="text-indigo-500" />
-                                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Security Credentials</h4>
+                                    <KeyRound size={16} className="text-indigo-500" />
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Security Credentials</h4>
                                 </div>
 
-                                <div className="space-y-6">
+                                <div className="space-y-5">
                                     <div className="space-y-2 relative">
                                         <label className={labelStyles}>Clearance Role</label>
                                         <div className="relative">
@@ -377,12 +376,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-4 pt-4">
+                                    <div className="flex items-center gap-4 pt-2">
                                         <div className="flex-1 space-y-2">
                                             <label className={labelStyles}>Node Status</label>
                                             <div className="flex p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                                                <button type="button" onClick={() => setFormData({...formData, active: true})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.active ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'}`}>Enabled</button>
-                                                <button type="button" onClick={() => setFormData({...formData, active: false})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!formData.active ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400'}`}>Locked</button>
+                                                <button type="button" onClick={() => setFormData({...formData, active: true})} className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${formData.active ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'}`}>Enabled</button>
+                                                <button type="button" onClick={() => setFormData({...formData, active: false})} className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${!formData.active ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400'}`}>Locked</button>
                                             </div>
                                         </div>
                                     </div>
@@ -390,11 +389,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-slate-100 flex items-center justify-between gap-6">
-                            <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-slate-100 transition-all active:scale-95">Discard Changes</button>
-                            <button type="submit" className="flex-1 py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[13px] uppercase tracking-[0.2em] shadow-2xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
-                                <ShieldCheck size={20} />
-                                {editingUser ? 'Update Secure Node' : 'Initialize Node Enlistment'}
+                        <div className="pt-6 border-t border-slate-100 flex items-center justify-between gap-4">
+                            <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3.5 rounded-2xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] shadow-sm hover:bg-slate-100 transition-all active:scale-95">Discard</button>
+                            <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                <ShieldCheck size={18} />
+                                {editingUser ? 'Update Secure Node' : 'Initialize Node'}
                             </button>
                         </div>
                     </form>
