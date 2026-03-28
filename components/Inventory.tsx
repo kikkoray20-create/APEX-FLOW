@@ -46,6 +46,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
     const [stagedItems, setStagedItems] = useState<StagedItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [showItemDropdown, setShowItemDropdown] = useState(false);
+    const [adjRemarks, setAdjRemarks] = useState('');
 
     // Detail Modal State
     const [viewingLog, setViewingLog] = useState<InventoryLog | null>(null);
@@ -89,6 +90,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
         setQtyInput('');
         setModalSearch('');
         setIsBulkModalOpen(true);
+        setAdjRemarks('');
     };
 
     const handleAddToStage = () => {
@@ -154,7 +156,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                   totalQuantity: change,
                   itemCount: 1,
                   currentStock: newQty,
-                  remarks: `Manual Batch ${transactionType} Entry`,
+                  remarks: adjRemarks,
                   createdDate: dateStr,
                   instanceId: currentUser.instanceId
                 });
@@ -167,7 +169,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                 itemCount: stagedItems.length,
                 totalQuantity: totalQuantity,
                 items: batchItems,
-                remarks: `Stock manual ${transactionType.toLowerCase()} via Architect Console`,
+                remarks: adjRemarks,
                 createdDate: dateStr,
                 instanceId: currentUser.instanceId
             };
@@ -550,9 +552,10 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                     Discard
                                 </button>
                                 <div className="flex-1">
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Remarks (Required)</label>
                                     <input 
                                         type="text"
-                                        placeholder="ENTER REMARKS (REQUIRED)..."
+                                        placeholder="ENTER REMARKS..."
                                         value={adjRemarks}
                                         onChange={(e) => setAdjRemarks(e.target.value)}
                                         className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase outline-none focus:border-indigo-400 shadow-sm"
