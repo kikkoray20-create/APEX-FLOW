@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { fetchOrders, fetchCustomers, fetchInventory } from '../services/db';
 import { Order, Customer, InventoryItem } from '../types';
-import * as XLSX from 'xlsx';
 import { useNotification } from '../context/NotificationContext';
 
 interface GRReportsProps {
@@ -77,9 +76,12 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
         });
     }, [grs, dateRange]);
 
-    const exportCustomerReport = () => {
+    const exportCustomerReport = async () => {
         setIsExporting(true);
         try {
+            const ExcelJS = (await import('exceljs')).default;
+            const { saveAs } = (await import('file-saver')).default;
+
             // Aggregate GR data by customer
             const customerStats: Record<string, any> = {};
             
@@ -105,21 +107,53 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
             });
 
             const data = Object.values(customerStats);
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Customer GR Report");
             
-            // Auto-size columns
-            const maxWidths = data.reduce((acc: any, row: any) => {
-                Object.keys(row).forEach((key, i) => {
-                    const val = String(row[key]);
-                    acc[i] = Math.max(acc[i] || 0, val.length, key.length);
-                });
-                return acc;
-            }, []);
-            worksheet['!cols'] = maxWidths.map((w: number) => ({ w: w + 2 }));
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Customer GR Report');
 
-            XLSX.writeFile(workbook, `GR_Customer_Report_${dateRange.start}_to_${dateRange.end}.xlsx`);
+            worksheet.columns = [
+                { header: 'Customer Name', key: 'Customer Name', width: 30 },
+                { header: 'City/Address', key: 'City/Address', width: 25 },
+                { header: 'Total GR Count', key: 'Total GR Count', width: 15 },
+                { header: 'Total Return Value', key: 'Total Return Value', width: 20 },
+                { header: 'Total Units Returned', key: 'Total Units Returned', width: 20 }
+            ];
+
+            data.forEach((row: any) => {
+                worksheet.addRow(row);
+            });
+
+            const headerRow = worksheet.getRow(1);
+            headerRow.font = { name: 'Calibri', size: 12, bold: true };
+            headerRow.eachCell((cell, colNumber) => {
+                if (colNumber >= 3) {
+                    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                } else {
+                    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                }
+            });
+
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.font = { name: 'Calibri', size: 11 };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber === 4) { // Total Return Value
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0.0';
+                        } else if (colNumber === 3 || colNumber === 5) {
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0';
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `GR_Customer_Report_${dateRange.start}_to_${dateRange.end}.xlsx`);
+            
             showNotification("Customer GR Report exported successfully");
         } catch (error) {
             console.error("Export failed", error);
@@ -129,9 +163,12 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
         }
     };
 
-    const exportStockReport = () => {
+    const exportStockReport = async () => {
         setIsExporting(true);
         try {
+            const ExcelJS = (await import('exceljs')).default;
+            const { saveAs } = (await import('file-saver')).default;
+
             // Calculate current GR Stock (Stock Room)
             const stockMap: Record<string, any> = {};
             
@@ -168,11 +205,51 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
             }
 
             const data = Object.values(stockMap).filter(i => i['Current GR Stock'] > 0);
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "GR Stock Report");
             
-            XLSX.writeFile(workbook, `GR_Stock_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('GR Stock Report');
+
+            worksheet.columns = [
+                { header: 'Brand', key: 'Brand', width: 15 },
+                { header: 'Model', key: 'Model', width: 35 },
+                { header: 'Quality', key: 'Quality', width: 15 },
+                { header: 'Category', key: 'Category', width: 15 },
+                { header: 'Current GR Stock', key: 'Current GR Stock', width: 20 },
+                { header: 'Last Return Date', key: 'Last Return Date', width: 20 }
+            ];
+
+            data.forEach((row: any) => {
+                worksheet.addRow(row);
+            });
+
+            const headerRow = worksheet.getRow(1);
+            headerRow.font = { name: 'Calibri', size: 12, bold: true };
+            headerRow.eachCell((cell, colNumber) => {
+                if (colNumber === 5) { // Current GR Stock
+                    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                } else {
+                    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                }
+            });
+
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.font = { name: 'Calibri', size: 11 };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber === 5) { // Current GR Stock
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0';
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `GR_Stock_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            
             showNotification("GR Stock Report exported successfully");
         } catch (error) {
             console.error("Export failed", error);

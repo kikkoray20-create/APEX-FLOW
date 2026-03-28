@@ -52,59 +52,147 @@ const OrderReports: React.FC = () => {
         showNotification(`Report Exported Successfully`);
     };
 
-    const exportSummary = (filtered: Order[]) => {
-        if (!(window as any).XLSX) {
-            showNotification('Excel library not loaded. Please refresh.', 'error');
-            return;
-        }
-        const data = filtered.map(o => ({
-            'Order ID': o.id,
-            'Date': o.orderTime.split(' ')[0],
-            'Customer Name': o.customerName,
-            'Total Amount': (o.totalAmount || 0).toFixed(1),
-            'Status': o.status.toUpperCase(),
-            'Warehouse': o.warehouse
-        }));
+    const exportSummary = async (filtered: Order[]) => {
+        if (filtered.length === 0) return;
         
-        const ws = (window as any).XLSX.utils.json_to_sheet(data);
-        const wb = (window as any).XLSX.utils.book_new();
-        (window as any).XLSX.utils.book_append_sheet(wb, ws, "Order Summary");
-        (window as any).XLSX.writeFile(wb, `Order_Summary_${dateRange.start}_to_${dateRange.end}.xlsx`);
+        try {
+            const ExcelJS = (await import('exceljs')).default;
+            const { saveAs } = (await import('file-saver')).default;
+            
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Order Summary');
+
+            worksheet.columns = [
+                { header: 'Order ID', key: 'id', width: 20 },
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Customer Name', key: 'customer', width: 30 },
+                { header: 'Total Amount', key: 'amount', width: 15 },
+                { header: 'Status', key: 'status', width: 15 },
+                { header: 'Warehouse', key: 'warehouse', width: 20 }
+            ];
+
+            filtered.forEach(o => {
+                worksheet.addRow({
+                    id: o.id,
+                    date: o.orderTime.split(' ')[0],
+                    customer: o.customerName,
+                    amount: o.totalAmount || 0,
+                    status: o.status.toUpperCase(),
+                    warehouse: o.warehouse
+                });
+            });
+
+            const headerRow = worksheet.getRow(1);
+            headerRow.font = { name: 'Calibri', size: 12, bold: true };
+            headerRow.eachCell((cell, colNumber) => {
+                if (colNumber === 4) { // Total Amount
+                    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                } else {
+                    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                }
+            });
+
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.font = { name: 'Calibri', size: 11 };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber === 4) { // Total Amount
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0.0';
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `Order_Summary_${dateRange.start}_to_${dateRange.end}.xlsx`);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            showNotification('Failed to export to Excel.', 'error');
+        }
     };
 
-    const exportDetail = (filtered: Order[]) => {
-        if (!(window as any).XLSX) {
-            showNotification('Excel library not loaded. Please refresh.', 'error');
-            return;
-        }
-        const detailedRows: any[] = [];
-        filtered.forEach(o => {
-            const storedItems = localStorage.getItem(`apexflow_items_${o.id}`);
-            const items: OrderItem[] = storedItems ? JSON.parse(storedItems) : [];
-            if (items.length > 0) {
-                items.forEach((item, index) => {
-                    const rowQty = item.fulfillQty || 0;
-                    const rowRate = item.finalPrice || 0;
-                    const rowSubtotal = rowQty * rowRate;
-                    detailedRows.push({
-                        'Order ID': index === 0 ? o.id : '',
-                        'Date': index === 0 ? o.orderTime.split(' ')[0] : '',
-                        'Customer': index === 0 ? o.customerName : '',
-                        'Brand': item.brand,
-                        'Model': item.model,
-                        'Qty': rowQty,
-                        'Rate': rowRate.toFixed(1),
-                        'Subtotal': rowSubtotal.toFixed(1)
-                    });
-                });
-                detailedRows.push({}); 
-            }
-        });
+    const exportDetail = async (filtered: Order[]) => {
+        if (filtered.length === 0) return;
         
-        const ws = (window as any).XLSX.utils.json_to_sheet(detailedRows);
-        const wb = (window as any).XLSX.utils.book_new();
-        (window as any).XLSX.utils.book_append_sheet(wb, ws, "Detailed Report");
-        (window as any).XLSX.writeFile(wb, `Order_Detailed_${dateRange.start}_to_${dateRange.end}.xlsx`);
+        try {
+            const ExcelJS = (await import('exceljs')).default;
+            const { saveAs } = (await import('file-saver')).default;
+            
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Detailed Report');
+
+            worksheet.columns = [
+                { header: 'Order ID', key: 'id', width: 20 },
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Customer', key: 'customer', width: 30 },
+                { header: 'Brand', key: 'brand', width: 15 },
+                { header: 'Model', key: 'model', width: 35 },
+                { header: 'Qty', key: 'qty', width: 10 },
+                { header: 'Rate', key: 'rate', width: 15 },
+                { header: 'Subtotal', key: 'subtotal', width: 15 }
+            ];
+
+            filtered.forEach(o => {
+                const storedItems = localStorage.getItem(`apexflow_items_${o.id}`);
+                const items: OrderItem[] = storedItems ? JSON.parse(storedItems) : [];
+                if (items.length > 0) {
+                    items.forEach((item, index) => {
+                        const rowQty = item.fulfillQty || 0;
+                        const rowRate = item.finalPrice || 0;
+                        const rowSubtotal = rowQty * rowRate;
+                        worksheet.addRow({
+                            id: index === 0 ? o.id : '',
+                            date: index === 0 ? o.orderTime.split(' ')[0] : '',
+                            customer: index === 0 ? o.customerName : '',
+                            brand: item.brand,
+                            model: item.model,
+                            qty: rowQty,
+                            rate: rowRate,
+                            subtotal: rowSubtotal
+                        });
+                    });
+                    worksheet.addRow({}); // Empty row
+                }
+            });
+
+            const headerRow = worksheet.getRow(1);
+            headerRow.font = { name: 'Calibri', size: 12, bold: true };
+            headerRow.eachCell((cell, colNumber) => {
+                if (colNumber >= 6) { // Qty, Rate, Subtotal
+                    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                } else {
+                    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                }
+            });
+
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.font = { name: 'Calibri', size: 11 };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber === 6) { // Qty
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0';
+                        } else if (colNumber === 7 || colNumber === 8) { // Rate, Subtotal
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0.0';
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `Order_Detailed_${dateRange.start}_to_${dateRange.end}.xlsx`);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            showNotification('Failed to export to Excel.', 'error');
+        }
     };
 
     return (

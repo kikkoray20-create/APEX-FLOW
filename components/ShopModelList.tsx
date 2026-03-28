@@ -295,38 +295,88 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
         }
     };
 
-    const handleExport = () => {
-        if (!(window as any).XLSX) {
-            showNotification('Excel library not loaded. Please refresh.', 'error');
-            return;
-        }
+    const handleExport = async () => {
         if (processedItems.length === 0) return;
-        const data = processedItems.map(item => ({
-            'Brand': item.brand,
-            'Quality': item.quality,
-            'Category': item.category,
-            'Model': item.model,
-            'Warehouse': item.warehouse,
-            'Price/Unit': item.price,
-            'Inventory': item.quantity,
-            'Status': item.status
-        }));
-        const ws = (window as any).XLSX.utils.json_to_sheet(data);
-        const wb = (window as any).XLSX.utils.book_new();
-        (window as any).XLSX.utils.book_append_sheet(wb, ws, "Inventory_Audit");
-        (window as any).XLSX.writeFile(wb, `ApexFlow_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
-    };
+        
+        try {
+            const ExcelJS = (await import('exceljs')).default;
+            const { saveAs } = (await import('file-saver')).default;
+            
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Inventory_Audit');
 
-    const filterWarehouses = ['All Warehouse', ...Array.from(new Set([
-        ...masters.warehouses,
-        ...items.map(i => i.warehouse || '')
-    ])).filter(Boolean).sort()];
+            // Define columns
+            worksheet.columns = [
+                { header: 'Brand', key: 'brand', width: 12 },
+                { header: 'Quality', key: 'quality', width: 15 },
+                { header: 'Category', key: 'category', width: 15 },
+                { header: 'Model', key: 'model', width: 40 },
+                { header: 'Warehouse', key: 'warehouse', width: 20 },
+                { header: 'Price/Unit', key: 'price', width: 12 },
+                { header: 'Inventory', key: 'quantity', width: 12 },
+                { header: 'Status', key: 'status', width: 12 }
+            ];
+
+            // Add data
+            processedItems.forEach(item => {
+                worksheet.addRow({
+                    brand: item.brand,
+                    quality: item.quality,
+                    category: item.category,
+                    model: item.model,
+                    warehouse: item.warehouse,
+                    price: item.price,
+                    quantity: item.quantity,
+                    status: item.status
+                });
+            });
+
+            // Style header row
+            const headerRow = worksheet.getRow(1);
+            headerRow.font = { name: 'Calibri', size: 12, bold: true };
+            headerRow.eachCell((cell, colNumber) => {
+                if (colNumber === 6 || colNumber === 7) { // Price/Unit and Inventory
+                    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                } else {
+                    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                }
+            });
+
+            // Style data rows
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.font = { name: 'Calibri', size: 11 };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber === 6) { // Price/Unit
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0.0'; // 1 decimal place
+                        } else if (colNumber === 7) { // Inventory
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '0'; // Integer
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+            });
+
+            // Generate and save file
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `ApexFlow_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            showNotification('Failed to export to Excel.', 'error');
+        }
+    };
 
     const brandsList = (masters.brands?.length > 0) ? masters.brands : Array.from(new Set(items.map(i => i.brand))).filter(Boolean).sort();
     const qualitiesList = (masters.qualities?.length > 0) ? masters.qualities : Array.from(new Set(items.map(i => i.quality))).filter(Boolean).sort();
     const categoriesList = (masters.categories?.length > 0) ? masters.categories : Array.from(new Set(items.map(i => i.category))).filter(Boolean).sort();
     const modelsList = (masters.models?.length > 0) ? masters.models : Array.from(new Set(items.map(i => i.model))).filter(Boolean).sort();
-    const uniqueWarehousesList = (masters.warehouses?.length > 0) ? masters.warehouses : Array.from(new Set(items.map(i => i.warehouse))).filter(w => w && w !== 'All Warehouse').sort();
+    const uniqueWarehousesList = (masters.warehouses?.length > 0) 
+        ? masters.warehouses.filter(w => w !== 'All Warehouse').sort()
+        : Array.from(new Set(items.map(i => i.warehouse))).filter(w => w && w !== 'All Warehouse' && w !== 'Main Warehouse').sort();
 
     const filteredItems = useMemo(() => {
         return items.filter(item => {
@@ -415,7 +465,10 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                 <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                     <div className="relative min-w-[160px]">
                         <select value={warehouseFilter} onChange={(e) => { setWarehouseFilter(e.target.value); setCurrentPage(1); }} className={selectStyles}>
-                            {filterWarehouses.map(w => <option key={w} value={w}>{w}</option>)}
+                            <option value="All Warehouse">All Warehouses</option>
+                            {uniqueWarehousesList.map(w => (
+                                <option key={w} value={w}>{w}</option>
+                            ))}
                         </select>
                         <ChevronDown size={14} className={iconStyles} />
                     </div>
