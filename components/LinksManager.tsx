@@ -226,8 +226,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
                 <div className="flex items-center gap-4 mb-8 text-[11px] font-black text-slate-500 uppercase tracking-widest mt-auto"><span className="text-[10px] text-slate-300">{link.createdDate}</span></div>
                 <div className="space-y-3">
                     <div className="grid grid-cols-1 gap-3">
-                        <button onClick={() => { setActiveLink(link); setSimulationMode(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-100 transition-all"><Smartphone size={16}/> Simulate</button>
-                        <button onClick={() => { setActiveLink(link); setIsVisibilityModalOpen(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all"><Eye size={16}/> Visibility</button>
+                        <button onClick={() => { setActiveLink(link); setIsVisibilityModalOpen(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-100 transition-all"><Eye size={16}/> Visibility</button>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => handleOpenBroadcast(link)} className="flex items-center justify-center gap-2 py-3.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"><Radio size={16}/> Broadcast</button>
