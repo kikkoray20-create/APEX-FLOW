@@ -431,6 +431,7 @@ const AppContent: React.FC = () => {
                     const timestamp = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 
                     for (const orderItem of orderItemsForLogic) {
+                        console.log("DEBUG: Processing orderItem:", orderItem.model, "fulfillQty:", orderItem.fulfillQty);
                         if (orderItem.fulfillQty <= 0) continue;
 
                         const invItem = currentInventory.find(i => 
@@ -439,8 +440,11 @@ const AppContent: React.FC = () => {
                             i.quality.toUpperCase().trim() === orderItem.quality.toUpperCase().trim()
                         );
 
+                        console.log("DEBUG: Found invItem:", invItem ? invItem.model : "Not Found", "Current Qty:", invItem?.quantity);
+
                         if (invItem) {
                             const newQty = invItem.quantity - orderItem.fulfillQty;
+                            console.log("DEBUG: Updating inventory. New Qty:", newQty);
                             await updateInventoryItemInDB({ ...invItem, quantity: newQty });
                             await syncPortalVisibilityOnStockEmpty(invItem.id, newQty);
                             
