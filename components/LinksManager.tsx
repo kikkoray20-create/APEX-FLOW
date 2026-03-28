@@ -317,6 +317,24 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
             </div>
         </div>
       )}
+
+      {/* VISIBILITY MODAL */}
+      {isVisibilityModalOpen && activeLink && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg"><Eye size={20} /></div>
+                        <div><h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Portal Visibility</h3><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Manage Model Access</p></div>
+                    </div>
+                    <button onClick={() => setIsVisibilityModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shadow-sm"><X size={20}/></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                    <p className="text-xs font-bold text-slate-500">Visibility management for {activeLink.title} is currently under development.</p>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
