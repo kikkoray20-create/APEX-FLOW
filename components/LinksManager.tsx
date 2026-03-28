@@ -3,7 +3,7 @@ import {
     Search, Copy, X, Plus, Check, RefreshCw, Trash2, Send, ShoppingBag, 
     Layers, Smartphone, ArrowRight, LogOut, Loader2, QrCode, Globe, Link2, 
     Settings2, Radio, CopyPlus, Users, User, CheckSquare, Square,
-    Package, ChevronRight, Lock, ChevronUp, ChevronDown, ShoppingCart, AlertCircle,
+    Package, ChevronRight, Lock, ChevronUp, ChevronDown, ShoppingCart, AlertCircle, Eye,
     CreditCard, ReceiptText, History, RotateCcw, CheckCircle2, Building2,
     Download, Share2, ChevronLeft, ChevronRight as ChevronRightIcon, Target, MessageSquare, UserCheck, CheckCircle,
     ArrowLeftRight, Filter, MinusCircle, PlusCircle, LayoutGrid, ArrowLeft,
@@ -44,6 +44,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false);
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
   
   const [activeLink, setActiveLink] = useState<LinkEntry | null>(null);
@@ -226,6 +227,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
                 <div className="space-y-3">
                     <div className="grid grid-cols-1 gap-3">
                         <button onClick={() => { setActiveLink(link); setSimulationMode(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-100 transition-all"><Smartphone size={16}/> Simulate</button>
+                        <button onClick={() => { setActiveLink(link); setIsVisibilityModalOpen(true); }} className="flex items-center justify-center gap-2 py-3.5 bg-slate-100 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all"><Eye size={16}/> Visibility</button>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => handleOpenBroadcast(link)} className="flex items-center justify-center gap-2 py-3.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"><Radio size={16}/> Broadcast</button>
