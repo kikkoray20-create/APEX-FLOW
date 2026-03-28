@@ -406,6 +406,7 @@ const AppContent: React.FC = () => {
             }
             // BILLING LOGIC: Deduct credit & stock & create history when reaching billed status for first time
             else if (isBillingStatus && wasNotBillingStatus) {
+              console.log("Triggering billing logic for status:", status);
                 // 1. Balance Deduction
                 try {
                     const allCusts = await fetchCustomers(currentUser?.instanceId);
