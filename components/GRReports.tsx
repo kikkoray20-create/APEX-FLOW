@@ -99,39 +99,40 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
             const ExcelJS = (await import('exceljs')).default;
             const { saveAs } = (await import('file-saver')).default;
 
-            // Aggregate GR data by customer
-            const customerStats: Record<string, any> = {};
-            
-            filteredGRs.forEach(gr => {
-                const key = gr.customerId || gr.customerName;
-                if (!customerStats[key]) {
-                    customerStats[key] = {
-                        'Customer Name': gr.customerName,
-                        'City/Address': gr.customerSubtext || '',
-                        'Total GR Count': 0,
-                        'Total Return Value': 0,
-                        'Total Units Returned': 0
-                    };
-                }
-                customerStats[key]['Total GR Count'] += 1;
-                customerStats[key]['Total Return Value'] += (gr.totalAmount || 0);
+            // Do not aggregate; show each GR as a separate row
+            const data = filteredGRs.map(gr => {
+                let totalUnits = 0;
+                let items = gr.items || [];
                 
-                if (gr.items) {
-                    gr.items.forEach((item: any) => {
-                        customerStats[key]['Total Units Returned'] += (item.returnQty || item.fulfillQty || 0);
-                    });
+                if (items.length === 0) {
+                    const storedItems = localStorage.getItem(`apexflow_items_${gr.id}`);
+                    if (storedItems) {
+                        try {
+                            items = JSON.parse(storedItems);
+                        } catch (e) {
+                            items = [];
+                        }
+                    }
                 }
-            });
 
-            const data = Object.values(customerStats);
+                items.forEach((item: any) => {
+                    totalUnits += (Number(item.returnQty) || Number(item.fulfillQty) || 0);
+                });
+
+                return {
+                    'Date': gr.orderTime,
+                    'Customer Name': gr.customerName,
+                    'Total Return Value': gr.totalAmount || 0,
+                    'Total Units Returned': totalUnits
+                };
+            });
             
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Customer GR Report');
 
             worksheet.columns = [
+                { header: 'Date', key: 'Date', width: 20 },
                 { header: 'Customer Name', key: 'Customer Name', width: 30 },
-                { header: 'City/Address', key: 'City/Address', width: 25 },
-                { header: 'Total GR Count', key: 'Total GR Count', width: 15 },
                 { header: 'Total Return Value', key: 'Total Return Value', width: 20 },
                 { header: 'Total Units Returned', key: 'Total Units Returned', width: 20 }
             ];
@@ -154,10 +155,10 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
                 if (rowNumber > 1) {
                     row.font = { name: 'Calibri', size: 11 };
                     row.eachCell((cell, colNumber) => {
-                        if (colNumber === 4) { // Total Return Value
+                        if (colNumber === 3) { // Total Return Value
                             cell.alignment = { horizontal: 'right', vertical: 'middle' };
                             cell.numFmt = '0.0';
-                        } else if (colNumber === 3 || colNumber === 5) {
+                        } else if (colNumber === 4) { // Total Units Returned
                             cell.alignment = { horizontal: 'right', vertical: 'middle' };
                             cell.numFmt = '0';
                         } else {
