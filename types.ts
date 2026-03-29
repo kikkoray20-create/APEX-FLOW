@@ -144,5 +144,6 @@ export interface InventoryLog extends BaseEntity {
     currentStock?: number;
     remarks: string;
     createdDate: string;
+    timestamp: number;
     customerName?: string;
 }

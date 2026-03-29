@@ -158,6 +158,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                   currentStock: newQty,
                   remarks: adjRemarks,
                   createdDate: dateStr,
+                  timestamp: now.getTime(),
                   instanceId: currentUser.instanceId
                 });
             }
@@ -171,6 +172,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                 items: batchItems,
                 remarks: adjRemarks,
                 createdDate: dateStr,
+                timestamp: now.getTime(),
                 instanceId: currentUser.instanceId
             };
 
@@ -188,9 +190,10 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
 
     const filteredLogs = useMemo(() => {
         const searchLower = searchTerm.toLowerCase();
-        return [...logs].sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()).filter(log => {
+        return [...logs].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).filter(log => {
             const matchesSearch = (log.remarks || '').toLowerCase().includes(searchLower) ||
                                 (log.shopName || '').toLowerCase().includes(searchLower) ||
+                                (log.modelName || '').toLowerCase().includes(searchLower) ||
                                 (log.items?.some(i => (i.model || '').toLowerCase().includes(searchLower)));
             
             const matchesStatus = statusFilter === 'ALL' || log.status === statusFilter;
@@ -201,12 +204,10 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
 
     const modalFilteredInventory = useMemo(() => {
         const searchLower = modalSearch.toLowerCase();
-        const filtered = inventory.filter(i => 
+        return inventory.filter(i => 
             ((i.model || '').toLowerCase().includes(searchLower) || 
              (i.brand || '').toLowerCase().includes(searchLower))
         ).slice(0, 15);
-        console.log('Inventory:', inventory, 'Filtered:', filtered, 'Search:', modalSearch);
-        return filtered;
     }, [inventory, modalSearch]);
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
@@ -445,7 +446,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                             />
                                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />
                                             
-                                            {showItemDropdown && modalSearch && modalFilteredInventory.length > 0 && (
+                                            {showItemDropdown && modalFilteredInventory.length > 0 && (
                                                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto custom-scrollbar animate-in slide-in-from-top-2">
                                                     {modalFilteredInventory.map(i => (
                                                         <button key={i.id} onClick={() => { setSelectedItem(i); setModalSearch(`${i.brand} ${i.model}`); setShowItemDropdown(false); }} className="w-full text-left px-5 py-3.5 hover:bg-indigo-50 border-b border-slate-50 last:border-0 flex items-center justify-between group transition-colors">
@@ -458,6 +459,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                                             </div>
                                                             <div className="text-right shrink-0">
                                                                 <p className="text-[11px] font-black text-emerald-600 tracking-tighter">₹{i.price.toFixed(1)}</p>
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Stock: {i.quantity}</p>
                                                             </div>
                                                         </button>
                                                     ))}
@@ -581,62 +583,43 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
             {/* DETAIL MODAL: Log Item Summary */}
             {viewingLog && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95">
-                        <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
-                                    <ReceiptText size={24} strokeWidth={2.5} />
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95">
+                        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+                                    <ReceiptText size={20} strokeWidth={2.5} />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Audit Payload Detail</h3>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ref ID: {viewingLog.id.slice(-8)}</p>
+                                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Audit Detail</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{viewingLog.createdDate}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setViewingLog(null)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all hover:rotate-90">
-                                <X size={24} />
+                            <button onClick={() => setViewingLog(null)} className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all hover:rotate-90">
+                                <X size={20} />
                             </button>
                         </div>
                         
-                        <div className="p-10 space-y-10">
-                            <div className="flex justify-between items-start pb-8 border-b border-slate-50">
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-2">Target Deployment Node</p>
-                                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">{viewingLog.shopName}</h3>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{viewingLog.createdDate}</span>
-                                        <span className={`px-4 py-1 rounded-xl text-[9px] font-black uppercase border tracking-[0.1em] ${viewingLog.status === 'Added' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>{viewingLog.status === 'Added' ? 'Stock Inflow' : 'Stock Outward'}</span>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Aggregate Qty</p>
-                                    <h3 className={`text-5xl font-black tracking-tighter italic ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        {viewingLog.status === 'Added' ? '+' : '-'}{viewingLog.totalQuantity || viewingLog.quantityChange}
-                                    </h3>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers size={14}/> Node Item Breakdown</h4>
-                                <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers size={14}/> Models</h4>
+                                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
                                     {viewingLog.items ? viewingLog.items.map((it, idx) => (
-                                        <div key={idx} className="p-5 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center group hover:bg-indigo-50/30 transition-all">
+                                        <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center group hover:bg-indigo-50/30 transition-all">
                                             <div className="min-w-0 pr-4">
-                                                <p className="text-[13px] font-black text-slate-800 uppercase truncate leading-none">{it.brand} {it.model}</p>
-                                                <p className="text-[9px] font-black text-slate-400 mt-2 uppercase tracking-widest">{it.quality}</p>
+                                                <p className="text-[12px] font-black text-slate-800 uppercase truncate leading-none">{it.brand} {it.model}</p>
+                                                <p className="text-[9px] font-black text-slate-400 mt-1.5 uppercase tracking-widest">{it.quality}</p>
                                             </div>
-                                            <div className={`text-lg font-black tracking-tighter ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            <div className={`text-sm font-black tracking-tighter ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                 x{it.quantity}
                                             </div>
                                         </div>
                                     )) : (
-                                        <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center">
+                                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
                                             <div className="min-w-0 pr-4">
-                                                <p className="text-[13px] font-black text-slate-800 uppercase truncate leading-none">{viewingLog.modelName}</p>
-                                                <p className="text-[9px] font-black text-slate-400 mt-2 uppercase tracking-widest">Hardware Specification</p>
+                                                <p className="text-[12px] font-black text-slate-800 uppercase truncate leading-none">{viewingLog.modelName}</p>
+                                                <p className="text-[9px] font-black text-slate-400 mt-1.5 uppercase tracking-widest">Hardware Specification</p>
                                             </div>
-                                            <div className={`text-lg font-black tracking-tighter ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            <div className={`text-sm font-black tracking-tighter ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                 x{viewingLog.quantityChange}
                                             </div>
                                         </div>
@@ -644,14 +627,14 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-8 rounded-[2rem] border-2 border-dashed border-slate-100">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><MessageSquare size={12}/> Auditor Reasoning</p>
-                                <p className="text-[13px] font-bold text-slate-600 italic leading-relaxed uppercase tracking-tight">"{viewingLog.remarks}"</p>
+                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><MessageSquare size={12}/> Remarks</p>
+                                <p className="text-[12px] font-bold text-slate-600 italic leading-relaxed uppercase tracking-tight">"{viewingLog.remarks}"</p>
                             </div>
                         </div>
 
-                        <div className="px-10 py-8 border-t border-slate-100 bg-slate-50/50 flex justify-end">
-                            <button onClick={() => setViewingLog(null)} className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all active:scale-95">Dismiss Audit View</button>
+                        <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                            <button onClick={() => setViewingLog(null)} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-slate-800 transition-all active:scale-95">Close</button>
                         </div>
                     </div>
                 </div>

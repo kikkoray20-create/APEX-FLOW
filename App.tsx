@@ -494,7 +494,7 @@ const AppContent: React.FC = () => {
 
     switch (currentView) {
       case 'inventory': return <Inventory currentUser={currentUser} />;
-      case 'models': return <ShopModelList onViewModel={setSelectedModel} />;
+      case 'models': return <ShopModelList currentUser={currentUser!} onViewModel={setSelectedModel} />;
       case 'clients': return <Customers onCreateOrder={setOrderingCustomer} currentUser={currentUser} />;
       case 'customer_firms': return <CustomerFirms />;
       case 'customer_gr': return <CustomerGR currentUser={currentUser} allUsers={users} />;

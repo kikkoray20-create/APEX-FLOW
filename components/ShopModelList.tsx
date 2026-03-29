@@ -7,7 +7,7 @@ import {
     Trash2, Box, Layers, ArrowUpDown, CheckCircle, AlertCircle, Info, Database,
     SearchCode, Check
 } from 'lucide-react';
-import { InventoryItem, InventoryLog } from '../types';
+import { User, InventoryItem, InventoryLog } from '../types';
 import { fetchInventory, updateInventoryItemInDB, addInventoryItemToDB, addInventoryLogToDB, fetchMasterRecords, addMasterRecord, deleteMasterRecord, fetchLinks, updateLinkInDB } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
@@ -27,9 +27,10 @@ type SortConfig = {
 
 interface ShopModelListProps {
     onViewModel: (item: ShopItem) => void;
+    currentUser: User;
 }
 
-const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
+const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel, currentUser }) => {
     const [items, setItems] = useState<ShopItem[]>([]);
     const [loading, setLoading] = useState(true);
     const { showNotification } = useNotification();
@@ -79,13 +80,13 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
         location: '-'
     });
 
-    useEffect(() => { loadAllData(); }, []);
+    useEffect(() => { loadAllData(); }, [currentUser]);
 
     const loadAllData = async () => {
         setLoading(true);
         try {
             const [invData, b, q, c, m, w] = await Promise.all([
-                fetchInventory(),
+                fetchInventory(currentUser.instanceId),
                 fetchMasterRecords('brand'),
                 fetchMasterRecords('quality'),
                 fetchMasterRecords('category'),
@@ -177,7 +178,9 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel }) => {
                 itemCount: 1,
                 currentStock: updatedItem.quantity,
                 remarks: adjRemarks || `Manual ${adjType} of ${change} units`,
-                createdDate: timestamp
+                createdDate: timestamp,
+                timestamp: now.getTime(),
+                instanceId: currentUser.instanceId
             };
             await addInventoryLogToDB(log);
             showNotification(`Stock adjusted to ${newQuantity}`);
