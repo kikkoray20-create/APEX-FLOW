@@ -5,7 +5,7 @@ import { Calendar, Search, Users, ShoppingBag, PackageCheck, Loader2, ChevronDow
 import { Order, OrderItem, Customer } from '../types';
 import { fetchOrders, fetchCustomers } from '../services/db';
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 interface CustomerStat {
     customerId: string;
@@ -37,7 +37,7 @@ const CustomerOrderReports: React.FC = () => {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     useEffect(() => { loadData(); }, []);
     const loadData = async () => {

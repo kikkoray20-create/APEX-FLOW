@@ -16,7 +16,7 @@ import { fetchLinks, addLinkToDB, updateLinkInDB, deleteLinkFromDB, fetchInvento
 import { useNotification } from '../context/NotificationContext';
 import CustomerPortal from './CustomerPortal';
 
-const PAGE_SIZE_OPTIONS = [100, 200, 300, 500, 1000];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 interface LinkEntry {
     id: string; 
@@ -58,7 +58,7 @@ const LinksManager: React.FC<LinksManagerProps> = ({ currentUser }) => {
   
   const [vSearch, setVSearch] = useState('');
   const [vCurrentPage, setVCurrentPage] = useState(1);
-  const [vItemsPerPage, setVItemsPerPage] = useState(100);
+  const [vItemsPerPage, setVItemsPerPage] = useState(20);
   const [selectedMasterIds, setSelectedMasterIds] = useState<string[]>([]);
   const [selectedPortalIds, setSelectedPortalIds] = useState<string[]>([]);
 

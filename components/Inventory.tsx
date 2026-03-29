@@ -11,7 +11,7 @@ import { InventoryLog, InventoryItem, User } from '../types';
 import { fetchInventoryLogs, fetchInventory, updateInventoryItemInDB, addInventoryLogToDB } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
-const PAGE_SIZE_OPTIONS = [50, 100, 200, 300, 500, 1000];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 interface StagedItem {
     item: InventoryItem;
@@ -31,7 +31,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(50);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     // Bulk Modal States
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -190,7 +190,24 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
 
     const filteredLogs = useMemo(() => {
         const searchLower = searchTerm.toLowerCase();
-        return [...logs].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).filter(log => {
+        
+        const parseLogDate = (dateStr: string) => {
+            if (!dateStr) return 0;
+            try {
+                const [dPart, tPart, ampm] = dateStr.split(' ');
+                const [d, m, y] = dPart.split('/').map(Number);
+                let [hh, mm] = (tPart || '00:00').split(':').map(Number);
+                if (ampm === 'PM' && hh < 12) hh += 12;
+                if (ampm === 'AM' && hh === 12) hh = 0;
+                return new Date(y, m - 1, d, hh, mm).getTime();
+            } catch (e) { return 0; }
+        };
+
+        return [...logs].sort((a, b) => {
+            const timeA = a.timestamp || parseLogDate(a.createdDate);
+            const timeB = b.timestamp || parseLogDate(b.createdDate);
+            return timeB - timeA;
+        }).filter(log => {
             const matchesSearch = (log.remarks || '').toLowerCase().includes(searchLower) ||
                                 (log.shopName || '').toLowerCase().includes(searchLower) ||
                                 (log.modelName || '').toLowerCase().includes(searchLower) ||

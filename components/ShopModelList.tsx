@@ -11,7 +11,7 @@ import { User, InventoryItem, InventoryLog } from '../types';
 import { fetchInventory, updateInventoryItemInDB, addInventoryItemToDB, addInventoryLogToDB, fetchMasterRecords, addMasterRecord, deleteMasterRecord, fetchLinks, updateLinkInDB } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
-const PAGE_SIZE_OPTIONS = [50, 100, 200, 300, 500, 1000];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 interface ShopItem extends InventoryItem {
     category: string;
@@ -37,7 +37,7 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel, currentUser 
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(50);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     // Master Records States
     const [masters, setMasters] = useState<{ brands: string[], qualities: string[], categories: string[], models: string[], warehouses: string[] }>({

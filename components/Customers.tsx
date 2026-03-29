@@ -67,7 +67,7 @@ const COUNTRY_CODES = [
   { code: '+977', label: '+977' },
 ];
 
-const PAGE_SIZE_OPTIONS = [10, 30, 50, 100];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 const LEDGER_LIMIT_OPTIONS = [50, 100, 500, 'All'];
 
 const Customers: React.FC<CustomersProps> = ({ onCreateOrder, currentUser }) => {
@@ -94,7 +94,7 @@ const Customers: React.FC<CustomersProps> = ({ onCreateOrder, currentUser }) => 
   const [previewOrderItems, setPreviewOrderItems] = useState<OrderItem[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [ledgerLimit, setLedgerLimit] = useState<number | 'All'>(50);
 
   const [formData, setFormData] = useState<any>({

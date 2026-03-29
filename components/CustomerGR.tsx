@@ -37,7 +37,7 @@ import { Order, Customer, InventoryItem, GRInventoryItem, UserRole, OrderItem, U
 import { fetchOrders, fetchCustomers, fetchInventory, addOrderToDB, deleteOrderFromDB, updateCustomerInDB, updateOrderInDB, addInventoryLogToDB, updateInventoryItemInDB } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
-const PAGE_SIZE_OPTIONS = [50, 100, 200, 300, 500, 1000];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 interface CustomerGRProps {
     currentUser: UserType;
@@ -72,7 +72,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(50);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     // Creation Workflow State
     const [isCreating, setIsCreating] = useState(false);
