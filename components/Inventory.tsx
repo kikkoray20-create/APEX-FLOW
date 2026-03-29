@@ -20,9 +20,10 @@ interface StagedItem {
 
 interface InventoryProps {
     currentUser: User;
+    onViewLog: (log: InventoryLog) => void;
 }
 
-const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
+const Inventory: React.FC<InventoryProps> = ({ currentUser, onViewLog }) => {
     const [logs, setLogs] = useState<InventoryLog[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL'); 
@@ -47,9 +48,6 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [showItemDropdown, setShowItemDropdown] = useState(false);
     const [adjRemarks, setAdjRemarks] = useState('');
-
-    // Detail Modal State
-    const [viewingLog, setViewingLog] = useState<InventoryLog | null>(null);
 
     useEffect(() => { loadData(); }, [currentUser]);
 
@@ -129,13 +127,21 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
             const now = new Date();
             const dateStr = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
             
-            const batchItems = stagedItems.map(si => ({
-                brand: si.item.brand,
-                model: si.item.model,
-                quality: si.item.quality,
-                quantity: si.quantity,
-                warehouse: si.item.warehouse || 'APEXFLOW'
-            }));
+            const batchItems = stagedItems.map(si => {
+                const change = si.quantity;
+                const newQty = transactionType === 'Add' ? (si.item.quantity || 0) + change : (si.item.quantity || 0) - change;
+                return {
+                    brand: si.item.brand,
+                    model: si.item.model,
+                    quality: si.item.quality,
+                    category: si.item.category,
+                    quantity: si.quantity,
+                    warehouse: si.item.warehouse || 'APEXFLOW',
+                    currentStock: newQty,
+                    price: si.item.price,
+                    status: si.item.status || 'Active'
+                };
+            });
 
             const totalQuantity = stagedItems.reduce((sum, si) => sum + si.quantity, 0);
             const primaryWarehouse = stagedItems[0]?.item.warehouse || 'Main Warehouse';
@@ -333,7 +339,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                         </span>
                                     </td>
                                     <td className="px-8 py-4 text-center">
-                                        <button onClick={() => setViewingLog(log)} className="px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase transition-all shadow-sm">
+                                        <button onClick={() => onViewLog(log)} className="px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase transition-all shadow-sm">
                                             {log.itemCount || (log.items ? log.items.length : 1)} Lines
                                         </button>
                                     </td>
@@ -349,7 +355,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                         <span className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">{log.createdDate}</span>
                                     </td>
                                     <td className="px-8 py-4 text-right">
-                                        <button onClick={() => setViewingLog(log)} className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 rounded-xl transition-all active:scale-90 shadow-sm">
+                                        <button onClick={() => onViewLog(log)} className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 rounded-xl transition-all active:scale-90 shadow-sm">
                                             <Eye size={16} strokeWidth={3} />
                                         </button>
                                     </td>
@@ -592,66 +598,6 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser }) => {
                                     )}
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* DETAIL MODAL: Log Item Summary */}
-            {viewingLog && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95">
-                        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
-                                    <ReceiptText size={20} strokeWidth={2.5} />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Audit Detail</h3>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{viewingLog.createdDate}</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setViewingLog(null)} className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all hover:rotate-90">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        
-                        <div className="p-8 space-y-6">
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers size={14}/> Models</h4>
-                                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                                    {viewingLog.items ? viewingLog.items.map((it, idx) => (
-                                        <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center group hover:bg-indigo-50/30 transition-all">
-                                            <div className="min-w-0 pr-4">
-                                                <p className="text-[12px] font-black text-slate-800 uppercase truncate leading-none">{it.brand} {it.model}</p>
-                                                <p className="text-[9px] font-black text-slate-400 mt-1.5 uppercase tracking-widest">{it.quality}</p>
-                                            </div>
-                                            <div className={`text-sm font-black tracking-tighter ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                x{it.quantity}
-                                            </div>
-                                        </div>
-                                    )) : (
-                                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
-                                            <div className="min-w-0 pr-4">
-                                                <p className="text-[12px] font-black text-slate-800 uppercase truncate leading-none">{viewingLog.modelName}</p>
-                                                <p className="text-[9px] font-black text-slate-400 mt-1.5 uppercase tracking-widest">Hardware Specification</p>
-                                            </div>
-                                            <div className={`text-sm font-black tracking-tighter ${viewingLog.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                x{viewingLog.quantityChange}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><MessageSquare size={12}/> Remarks</p>
-                                <p className="text-[12px] font-bold text-slate-600 italic leading-relaxed uppercase tracking-tight">"{viewingLog.remarks}"</p>
-                            </div>
-                        </div>
-
-                        <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
-                            <button onClick={() => setViewingLog(null)} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-slate-800 transition-all active:scale-95">Close</button>
                         </div>
                     </div>
                 </div>

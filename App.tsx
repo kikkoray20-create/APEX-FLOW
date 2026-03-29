@@ -16,6 +16,7 @@ import LinksManager from './components/LinksManager';
 import BroadcastGroups from './components/BroadcastGroups';
 import ShopModelList from './components/ShopModelList';
 import ModelHistoryDetail from './components/ModelHistoryDetail';
+import InventoryLogDetail from './components/InventoryLogDetail';
 import OrderReports from './components/OrderReports';
 import CustomerOrderReports from './components/CustomerOrderReports';
 import DailyFulfilledSummary from './components/DailyFulfilledSummary';
@@ -50,6 +51,7 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState('orders'); 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedModel, setSelectedModel] = useState<any | null>(null);
+  const [selectedInventoryLog, setSelectedInventoryLog] = useState<InventoryLog | null>(null);
   const [orderingCustomer, setOrderingCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [users, setUsers] = useState<User[]>([]); 
@@ -175,6 +177,7 @@ const AppContent: React.FC = () => {
   const handleViewChange = (viewId: string) => {
     setSelectedOrder(null);
     setSelectedModel(null);
+    setSelectedInventoryLog(null);
     setOrderingCustomer(null);
     setCurrentView(viewId);
   };
@@ -492,9 +495,10 @@ const AppContent: React.FC = () => {
         }} />;
     }
     if (selectedModel) return <ModelHistoryDetail model={selectedModel} onBack={() => setSelectedModel(null)} />;
+    if (selectedInventoryLog) return <InventoryLogDetail log={selectedInventoryLog} onBack={() => setSelectedInventoryLog(null)} />;
 
     switch (currentView) {
-      case 'inventory': return <Inventory currentUser={currentUser} />;
+      case 'inventory': return <Inventory currentUser={currentUser} onViewLog={setSelectedInventoryLog} />;
       case 'models': return <ShopModelList currentUser={currentUser!} onViewModel={setSelectedModel} />;
       case 'clients': return <Customers onCreateOrder={setOrderingCustomer} currentUser={currentUser} />;
       case 'customer_firms': return <CustomerFirms />;

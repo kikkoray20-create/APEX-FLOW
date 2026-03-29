@@ -140,7 +140,7 @@ export interface InventoryLog extends BaseEntity {
     quantityChange?: number;
     totalQuantity: number;
     itemCount: number;
-    items?: Array<{ brand: string, model: string, quality: string, quantity: number, warehouse: string }>;
+    items?: Array<{ brand: string, model: string, quality: string, category?: string, quantity: number, warehouse: string, currentStock?: number, price?: number, status?: string }>;
     currentStock?: number;
     remarks: string;
     createdDate: string;
