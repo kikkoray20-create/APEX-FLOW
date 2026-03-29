@@ -36,12 +36,12 @@ const getData = async (collectionName: string, localKey: string, fallbackData: a
     if (db) {
         try {
             const collectionRef = collection(db, collectionName);
-            const q = instanceId 
-                ? query(collectionRef, where("instanceId", "==", instanceId))
-                : collectionRef;
-                
-            const querySnapshot = await getDocs(q);
-            const cloudData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            const querySnapshot = await getDocs(collectionRef);
+            let cloudData = querySnapshot.docs.map(doc => ({ ...doc.data() as any, id: doc.id }));
+            
+            if (instanceId) {
+                cloudData = cloudData.filter((item: any) => !item.instanceId || item.instanceId === instanceId);
+            }
             
             const local = localStorage.getItem(localStoreKey);
             let localData: any[] = [];

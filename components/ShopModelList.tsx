@@ -50,7 +50,7 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel, currentUser 
     // Search & Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [warehouseFilter, setWarehouseFilter] = useState('All Warehouse');
-    const [statusFilter, setStatusFilter] = useState('Active');
+    const [statusFilter, setStatusFilter] = useState('All Status');
 
     // Sorting
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
@@ -396,9 +396,21 @@ const ShopModelList: React.FC<ShopModelListProps> = ({ onViewModel, currentUser 
         let result = [...filteredItems];
         if (sortConfig.key && sortConfig.direction) {
             result.sort((a, b) => {
-                const valA = (a[sortConfig.key!] as number) || 0;
-                const valB = (b[sortConfig.key!] as number) || 0;
-                return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+                const valA = a[sortConfig.key!];
+                const valB = b[sortConfig.key!];
+                
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+                }
+                
+                const strA = String(valA || '').toLowerCase();
+                const strB = String(valB || '').toLowerCase();
+                
+                if (sortConfig.direction === 'asc') {
+                    return strA.localeCompare(strB);
+                } else {
+                    return strB.localeCompare(strA);
+                }
             });
         }
         return result;

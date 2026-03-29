@@ -458,6 +458,7 @@ const AppContent: React.FC = () => {
                                 currentStock: newQty,
                                 remarks: `Automatic Deduction (Status: ${status.toUpperCase()} on Order #${existingOrder.id})`,
                                 createdDate: timestamp,
+                                timestamp: Date.now(),
                                 customerName: existingOrder.customerName,
                                 instanceId: currentUser?.instanceId
                             };

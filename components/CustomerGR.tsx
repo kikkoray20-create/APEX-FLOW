@@ -179,6 +179,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
                             itemCount: 1,
                             remarks: `Bulk removal from GR stock room`,
                             createdDate: timestamp,
+                            timestamp: Date.now(),
                             currentStock: newQty,
                             instanceId: currentUser.instanceId
                         });
@@ -393,7 +394,8 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
                         totalQuantity: entry.returnQty,
                         itemCount: 1,
                         remarks: `Goods Return Entry #${grOrder.id}`,
-                        createdDate: timestamp
+                        createdDate: timestamp,
+                        timestamp: Date.now()
                     });
                 }
             }
@@ -466,6 +468,7 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
                     itemCount: 1,
                     remarks: `Physical stock sent to manufacturer/repairs`,
                     createdDate: timestamp,
+                    timestamp: Date.now(),
                     currentStock: newQty,
                     instanceId: currentUser.instanceId
                 };

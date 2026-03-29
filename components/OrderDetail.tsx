@@ -323,6 +323,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
                           currentStock: newStock,
                           remarks: `Manual Edit Correction (Order #${liveOrder.id})`,
                           createdDate: timestamp,
+                          timestamp: Date.now(),
                           customerName: liveOrder.customerName
                       };
                       await addInventoryLogToDB(log);
@@ -386,6 +387,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ order, onBack, currentUser, a
                       currentStock: newStock,
                       remarks: `Bulk Fulfill Protocol (Order #${liveOrder.id})`,
                       createdDate: timestamp,
+                      timestamp: Date.now(),
                       customerName: liveOrder.customerName
                   });
               }
