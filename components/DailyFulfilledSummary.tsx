@@ -8,6 +8,24 @@ import { Order } from '../types';
 import { fetchOrders } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
+const DateInput = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const formattedDate = value ? value.split('-').reverse().join('/') : 'DD/MM/YYYY';
+    return (
+        <div className="relative w-[130px]">
+            <input 
+                type="date" 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>{formattedDate}</span>
+                <Calendar size={14} className="text-slate-400 pointer-events-none" />
+            </div>
+        </div>
+    );
+};
+
 const DailyFulfilledSummary: React.FC = () => {
   const { showNotification } = useNotification();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -104,19 +122,9 @@ const DailyFulfilledSummary: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Range</div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <input 
-              type="date" 
-              value={dateRange.start} 
-              onChange={(e) => setDateRange({...dateRange, start: e.target.value})} 
-              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-            />
+            <DateInput value={dateRange.start} onChange={(val) => setDateRange({...dateRange, start: val})} />
             <div className="w-4 h-px bg-slate-200"></div>
-            <input 
-              type="date" 
-              value={dateRange.end} 
-              onChange={(e) => setDateRange({...dateRange, end: e.target.value})} 
-              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-            />
+            <DateInput value={dateRange.end} onChange={(val) => setDateRange({...dateRange, end: val})} />
           </div>
         </div>
 

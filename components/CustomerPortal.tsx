@@ -26,6 +26,23 @@ interface CustomerPortalProps {
     warehouse?: string;
 }
 
+const DateInput = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const formattedDate = value ? value.split('-').reverse().join('/') : 'DD/MM/YYYY';
+    return (
+        <div className="relative w-full">
+            <input 
+                type="date" 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl font-bold text-[10px] md:text-xs uppercase text-slate-700 flex items-center justify-between">
+                <span>{formattedDate}</span>
+            </div>
+        </div>
+    );
+};
+
 const CustomerPortal: React.FC<CustomerPortalProps> = ({ 
     storeName, 
     status, 
@@ -605,15 +622,15 @@ const CustomerPortal: React.FC<CustomerPortalProps> = ({
                                             <div className="space-y-2.5">
                                                 <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Range: Start</label>
                                                 <div className="relative">
-                                                    <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                    <input type="date" value={ledgerStart} onChange={e => setLedgerStart(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl outline-none font-bold text-[10px] md:text-xs uppercase" />
+                                                    <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 z-20 pointer-events-none" />
+                                                    <DateInput value={ledgerStart} onChange={setLedgerStart} />
                                                 </div>
                                             </div>
                                             <div className="space-y-2.5">
                                                 <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Range: End</label>
                                                 <div className="relative">
-                                                    <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                                    <input type="date" value={ledgerEnd} onChange={e => setLedgerEnd(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl md:rounded-2xl outline-none font-bold text-[10px] md:text-xs uppercase" />
+                                                    <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 z-20 pointer-events-none" />
+                                                    <DateInput value={ledgerEnd} onChange={setLedgerEnd} />
                                                 </div>
                                             </div>
                                         </div>

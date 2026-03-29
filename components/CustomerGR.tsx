@@ -37,6 +37,23 @@ import { Order, Customer, InventoryItem, GRInventoryItem, UserRole, OrderItem, U
 import { fetchOrders, fetchCustomers, fetchInventory, addOrderToDB, deleteOrderFromDB, updateCustomerInDB, updateOrderInDB, addInventoryLogToDB, updateInventoryItemInDB } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
+const DateInput = ({ value, onChange, className }: { value: string, onChange: (val: string) => void, className?: string }) => {
+    const formattedDate = value ? value.split('-').reverse().join('/') : 'DD/MM/YYYY';
+    return (
+        <div className={`relative ${className || ''}`}>
+            <input 
+                type="date" 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="w-full flex items-center justify-between">
+                <span>{formattedDate}</span>
+            </div>
+        </div>
+    );
+};
+
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 interface CustomerGRProps {
@@ -884,18 +901,16 @@ const CustomerGR: React.FC<CustomerGRProps> = ({ currentUser, allUsers }) => {
                         <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2 shadow-sm">
                             <Calendar size={14} className="text-rose-500" />
                             <div className="flex items-center gap-2">
-                                <input 
-                                    type="date" 
+                                <DateInput 
                                     value={dateRange.start} 
-                                    onChange={(e) => { setDateRange({...dateRange, start: e.target.value}); setCurrentPage(1); }}
-                                    className="bg-transparent text-[10px] font-black uppercase outline-none text-slate-600"
+                                    onChange={(val) => { setDateRange({...dateRange, start: val}); setCurrentPage(1); }}
+                                    className="bg-transparent text-[10px] font-black uppercase outline-none text-slate-600 w-[70px]"
                                 />
                                 <span className="text-slate-300 font-bold text-[9px]">TO</span>
-                                <input 
-                                    type="date" 
+                                <DateInput 
                                     value={dateRange.end} 
-                                    onChange={(e) => { setDateRange({...dateRange, end: e.target.value}); setCurrentPage(1); }}
-                                    className="bg-transparent text-[10px] font-black uppercase outline-none text-slate-600"
+                                    onChange={(val) => { setDateRange({...dateRange, end: val}); setCurrentPage(1); }}
+                                    className="bg-transparent text-[10px] font-black uppercase outline-none text-slate-600 w-[70px]"
                                 />
                             </div>
                         </div>

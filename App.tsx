@@ -198,12 +198,28 @@ const AppContent: React.FC = () => {
   // Precise parsing of date/time string for accurate sorting
   const parseOrderDate = (dateStr: string) => {
     try {
+      if (!dateStr) return 0;
       const [dPart, tPart, ampm] = dateStr.split(' ');
-      const [d, m, y] = dPart.split('/').map(Number);
+      let d, m, y;
+      if (dPart.includes('/')) {
+        [d, m, y] = dPart.split('/').map(Number);
+      } else if (dPart.includes('-')) {
+        const parts = dPart.split('-');
+        if (parts[0].length === 4) {
+          [y, m, d] = parts.map(Number);
+        } else {
+          [d, m, y] = parts.map(Number);
+        }
+      } else {
+        const time = new Date(dateStr).getTime();
+        return isNaN(time) ? 0 : time;
+      }
+      
       let [hh, mm] = (tPart || '00:00').split(':').map(Number);
       if (ampm === 'PM' && hh < 12) hh += 12;
       if (ampm === 'AM' && hh === 12) hh = 0;
-      return new Date(y, m - 1, d, hh, mm).getTime();
+      const time = new Date(y, m - 1, d, hh, mm).getTime();
+      return isNaN(time) ? 0 : time;
     } catch (e) { return 0; }
   };
 
@@ -337,7 +353,9 @@ const AppContent: React.FC = () => {
         
         if (valA < valB) return activeSortDir === 'asc' ? -1 : 1;
         if (valA > valB) return activeSortDir === 'asc' ? 1 : -1;
-        return 0;
+        
+        // Tie-breaker: sort by ID to ensure stable order matching dashboard
+        return activeSortDir === 'asc' ? (Number(a.id) || 0) - (Number(b.id) || 0) : (Number(b.id) || 0) - (Number(a.id) || 0);
     });
   }, [baseFilteredOrders, statusFilter, sortConfig, currentUser]);
 

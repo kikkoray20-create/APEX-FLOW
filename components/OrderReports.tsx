@@ -5,6 +5,24 @@ import { Order, OrderItem } from '../types';
 import { fetchOrders } from '../services/db';
 import { useNotification } from '../context/NotificationContext';
 
+const DateInput = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const formattedDate = value ? value.split('-').reverse().join('/') : 'DD/MM/YYYY';
+    return (
+        <div className="relative w-full">
+            <input 
+                type="date" 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 flex items-center justify-between">
+                <span>{formattedDate}</span>
+                <Calendar size={16} className="text-slate-400 pointer-events-none" />
+            </div>
+        </div>
+    );
+};
+
 const OrderReports: React.FC = () => {
     const { showNotification } = useNotification();
     const [loading, setLoading] = useState(false);
@@ -33,12 +51,28 @@ const OrderReports: React.FC = () => {
     // Precise parsing of date/time string for accurate sorting
     const parseOrderDate = (dateStr: string) => {
         try {
+            if (!dateStr) return 0;
             const [dPart, tPart, ampm] = dateStr.split(' ');
-            const [d, m, y] = dPart.split('/').map(Number);
+            let d, m, y;
+            if (dPart.includes('/')) {
+                [d, m, y] = dPart.split('/').map(Number);
+            } else if (dPart.includes('-')) {
+                const parts = dPart.split('-');
+                if (parts[0].length === 4) {
+                    [y, m, d] = parts.map(Number);
+                } else {
+                    [d, m, y] = parts.map(Number);
+                }
+            } else {
+                const time = new Date(dateStr).getTime();
+                return isNaN(time) ? 0 : time;
+            }
+            
             let [hh, mm] = (tPart || '00:00').split(':').map(Number);
             if (ampm === 'PM' && hh < 12) hh += 12;
             if (ampm === 'AM' && hh === 12) hh = 0;
-            return new Date(y, m - 1, d, hh, mm).getTime();
+            const time = new Date(y, m - 1, d, hh, mm).getTime();
+            return isNaN(time) ? 0 : time;
         } catch (e) { return 0; }
     };
 
@@ -46,14 +80,33 @@ const OrderReports: React.FC = () => {
         const filtered = orders.filter(o => {
             if (!['checked', 'dispatched'].includes(o.status)) return false;
             try {
+                if (!o.orderTime) return false;
                 const [datePart] = o.orderTime.split(' ');
-                const [d, m, y] = datePart.split('/');
-                const orderDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                let orderDate = '';
+                if (datePart.includes('/')) {
+                    const [d, m, y] = datePart.split('/');
+                    orderDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                } else if (datePart.includes('-')) {
+                    const parts = datePart.split('-');
+                    if (parts[0].length === 4) {
+                        orderDate = datePart; // already YYYY-MM-DD
+                    } else {
+                        const [d, m, y] = parts;
+                        orderDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                    }
+                } else {
+                    return false;
+                }
                 return orderDate >= dateRange.start && orderDate <= dateRange.end;
             } catch (e) { return false; }
         });
         
-        return filtered.sort((a, b) => parseOrderDate(b.orderTime) - parseOrderDate(a.orderTime));
+        return filtered.sort((a, b) => {
+            const timeA = parseOrderDate(a.orderTime);
+            const timeB = parseOrderDate(b.orderTime);
+            if (timeA !== timeB) return timeB - timeA;
+            return (Number(b.id) || 0) - (Number(a.id) || 0);
+        });
     }, [orders, dateRange]);
 
     const handleExport = async () => {
@@ -80,9 +133,10 @@ const OrderReports: React.FC = () => {
                 { header: 'Order ID', key: 'id', width: 20 },
                 { header: 'Customer Name', key: 'customer', width: 30 },
                 { header: 'Date & Time', key: 'date', width: 25 },
-                { header: 'Total Amount', key: 'amount', width: 15 },
+                { header: 'Warehouse', key: 'warehouse', width: 20 },
                 { header: 'Status', key: 'status', width: 15 },
-                { header: 'Warehouse', key: 'warehouse', width: 20 }
+                { header: 'Order Mode', key: 'orderMode', width: 15 },
+                { header: 'Total Amount', key: 'amount', width: 15 }
             ];
 
             filtered.forEach(o => {
@@ -90,16 +144,17 @@ const OrderReports: React.FC = () => {
                     id: o.id,
                     customer: o.customerName,
                     date: o.orderTime,
-                    amount: o.totalAmount || 0,
+                    warehouse: o.warehouse,
                     status: o.status.toUpperCase(),
-                    warehouse: o.warehouse
+                    orderMode: o.orderMode || 'Offline',
+                    amount: o.totalAmount || 0
                 });
             });
 
             const headerRow = worksheet.getRow(1);
             headerRow.font = { name: 'Calibri', size: 12, bold: true };
             headerRow.eachCell((cell, colNumber) => {
-                if (colNumber === 4) { // Total Amount
+                if (colNumber === 7) { // Total Amount
                     cell.alignment = { horizontal: 'right', vertical: 'middle' };
                 } else {
                     cell.alignment = { horizontal: 'left', vertical: 'middle' };
@@ -110,7 +165,7 @@ const OrderReports: React.FC = () => {
                 if (rowNumber > 1) {
                     row.font = { name: 'Calibri', size: 11 };
                     row.eachCell((cell, colNumber) => {
-                        if (colNumber === 4) { // Total Amount
+                        if (colNumber === 7) { // Total Amount
                             cell.alignment = { horizontal: 'right', vertical: 'middle' };
                             cell.numFmt = '0.0';
                         } else {
@@ -151,8 +206,18 @@ const OrderReports: React.FC = () => {
             ];
 
             filtered.forEach(o => {
-                const storedItems = localStorage.getItem(`apexflow_items_${o.id}`);
-                const items: OrderItem[] = storedItems ? JSON.parse(storedItems) : [];
+                let items: OrderItem[] = o.items || [];
+                if (items.length === 0) {
+                    const storedItems = localStorage.getItem(`apexflow_items_${o.id}`);
+                    if (storedItems) {
+                        try {
+                            items = JSON.parse(storedItems);
+                        } catch (e) {
+                            items = [];
+                        }
+                    }
+                }
+                
                 if (items.length > 0) {
                     items.forEach((item, index) => {
                         const rowQty = item.fulfillQty || 0;
@@ -169,8 +234,19 @@ const OrderReports: React.FC = () => {
                             subtotal: rowSubtotal
                         });
                     });
-                    worksheet.addRow({}); // Empty row
+                } else {
+                    worksheet.addRow({
+                        id: o.id,
+                        customer: o.customerName,
+                        date: o.orderTime,
+                        brand: '',
+                        model: '',
+                        qty: 0,
+                        rate: 0,
+                        subtotal: 0
+                    });
                 }
+                worksheet.addRow({}); // Empty row
             });
 
             const headerRow = worksheet.getRow(1);
@@ -228,8 +304,8 @@ const OrderReports: React.FC = () => {
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date Range</label>
                         <div className="flex gap-2">
-                            <input type="date" value={dateRange.start} onChange={(e) => setDateRange({...dateRange, start: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold outline-none focus:border-indigo-500 transition-all" />
-                            <input type="date" value={dateRange.end} onChange={(e) => setDateRange({...dateRange, end: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold outline-none focus:border-indigo-500 transition-all" />
+                            <DateInput value={dateRange.start} onChange={(val) => setDateRange({...dateRange, start: val})} />
+                            <DateInput value={dateRange.end} onChange={(val) => setDateRange({...dateRange, end: val})} />
                         </div>
                     </div>
                     <div className="space-y-2">

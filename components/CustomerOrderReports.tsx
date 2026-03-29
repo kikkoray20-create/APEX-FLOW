@@ -7,6 +7,24 @@ import { fetchOrders, fetchCustomers } from '../services/db';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
+const DateInput = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const formattedDate = value ? value.split('-').reverse().join('/') : 'DD/MM/YYYY';
+    return (
+        <div className="relative w-[120px]">
+            <input 
+                type="date" 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                <span>{formattedDate}</span>
+                <Calendar size={12} className="text-slate-400 pointer-events-none" />
+            </div>
+        </div>
+    );
+};
+
 interface CustomerStat {
     customerId: string;
     customerName: string;
@@ -206,9 +224,9 @@ const CustomerOrderReports: React.FC = () => {
                     <Calendar size={18} className="text-indigo-400 shrink-0" />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <input type="date" value={dateRange.start} onChange={(e) => { setDateRange({...dateRange, start: e.target.value}); setCurrentPage(1); }} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-[11px] font-bold outline-none focus:border-indigo-500 transition-colors" />
+                            <DateInput value={dateRange.start} onChange={(val) => { setDateRange({...dateRange, start: val}); setCurrentPage(1); }} />
                             <span className="text-slate-300 font-bold text-[10px]">TO</span>
-                            <input type="date" value={dateRange.end} onChange={(e) => { setDateRange({...dateRange, end: e.target.value}); setCurrentPage(1); }} className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-[11px] font-bold outline-none focus:border-indigo-500 transition-colors" />
+                            <DateInput value={dateRange.end} onChange={(val) => { setDateRange({...dateRange, end: val}); setCurrentPage(1); }} />
                         </div>
                         <p className="text-[9px] font-black text-indigo-500/60 uppercase tracking-widest mt-1 text-right">
                             {formatDateToDisplay(dateRange.start)} — {formatDateToDisplay(dateRange.end)}

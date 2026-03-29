@@ -15,6 +15,23 @@ import { fetchOrders, fetchCustomers, fetchInventory } from '../services/db';
 import { Order, Customer, InventoryItem } from '../types';
 import { useNotification } from '../context/NotificationContext';
 
+const DateInput = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const formattedDate = value ? value.split('-').reverse().join('/') : 'DD/MM/YYYY';
+    return (
+        <div className="relative w-full">
+            <input 
+                type="date" 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>{formattedDate}</span>
+            </div>
+        </div>
+    );
+};
+
 interface GRReportsProps {
     currentUser: any;
 }
@@ -313,25 +330,15 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
                                 <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                    <input 
-                                        type="date" 
-                                        value={dateRange.start}
-                                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 transition-all"
-                                    />
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-20 pointer-events-none" size={14} />
+                                    <DateInput value={dateRange.start} onChange={(val) => setDateRange(prev => ({ ...prev, start: val }))} />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label>
                                 <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                    <input 
-                                        type="date" 
-                                        value={dateRange.end}
-                                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 transition-all"
-                                    />
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-20 pointer-events-none" size={14} />
+                                    <DateInput value={dateRange.end} onChange={(val) => setDateRange(prev => ({ ...prev, end: val }))} />
                                 </div>
                             </div>
                         </div>
