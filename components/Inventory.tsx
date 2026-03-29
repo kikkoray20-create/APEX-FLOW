@@ -151,22 +151,6 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser, onViewLog }) => {
                 const change = staged.quantity;
                 const newQty = transactionType === 'Add' ? (item.quantity || 0) + change : (item.quantity || 0) - change;
                 await updateInventoryItemInDB({ ...item, quantity: newQty });
-
-                await addInventoryLogToDB({
-                  id: `ind-${Date.now()}-${item.id}`,
-                  itemId: item.id,
-                  modelName: `${item.brand} ${item.model} ${item.quality}`,
-                  shopName: 'Manual Stock Update',
-                  status: transactionType === 'Add' ? 'Added' : 'Removed',
-                  quantityChange: change,
-                  totalQuantity: change,
-                  itemCount: 1,
-                  currentStock: newQty,
-                  remarks: adjRemarks,
-                  createdDate: dateStr,
-                  timestamp: now.getTime(),
-                  instanceId: currentUser.instanceId
-                });
             }
 
             const summaryLog: InventoryLog = {
@@ -319,7 +303,7 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser, onViewLog }) => {
                         <thead>
                             <tr className="bg-slate-50/80 border-b border-slate-100">
                                 <th className="w-[20%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Movement</th>
-                                <th className="w-[15%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Lines</th>
+                                <th className="w-[15%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Items</th>
                                 <th className="w-[15%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Net Qty</th>
                                 <th className="w-[30%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Audit Remark</th>
                                 <th className="w-[20%] px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
@@ -339,9 +323,9 @@ const Inventory: React.FC<InventoryProps> = ({ currentUser, onViewLog }) => {
                                         </span>
                                     </td>
                                     <td className="px-8 py-4 text-center">
-                                        <button onClick={() => onViewLog(log)} className="px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase transition-all shadow-sm">
-                                            {log.itemCount || (log.items ? log.items.length : 1)} Lines
-                                        </button>
+                                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-tighter">
+                                            {log.itemCount || (log.items ? log.items.length : 1)}
+                                        </span>
                                     </td>
                                     <td className="px-8 py-4 text-center">
                                         <span className={`text-[15px] font-black tracking-tighter ${log.status === 'Added' ? 'text-emerald-600' : 'text-rose-600'}`}>

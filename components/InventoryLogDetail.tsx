@@ -120,7 +120,7 @@ const InventoryLogDetail: React.FC<InventoryLogDetailProps> = ({ log, onBack }) 
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <span className="text-xs font-bold text-emerald-600">
-                                            ₹{it.price || '0.0'}
+                                            ₹{(it.price || 0).toFixed(1)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
