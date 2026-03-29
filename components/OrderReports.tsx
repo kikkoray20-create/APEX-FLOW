@@ -30,8 +30,20 @@ const OrderReports: React.FC = () => {
         setLoading(false);
     };
 
+    // Precise parsing of date/time string for accurate sorting
+    const parseOrderDate = (dateStr: string) => {
+        try {
+            const [dPart, tPart, ampm] = dateStr.split(' ');
+            const [d, m, y] = dPart.split('/').map(Number);
+            let [hh, mm] = (tPart || '00:00').split(':').map(Number);
+            if (ampm === 'PM' && hh < 12) hh += 12;
+            if (ampm === 'AM' && hh === 12) hh = 0;
+            return new Date(y, m - 1, d, hh, mm).getTime();
+        } catch (e) { return 0; }
+    };
+
     const verifiedOrdersInRange = useMemo(() => {
-        return orders.filter(o => {
+        const filtered = orders.filter(o => {
             if (!['checked', 'dispatched'].includes(o.status)) return false;
             try {
                 const [datePart] = o.orderTime.split(' ');
@@ -40,6 +52,8 @@ const OrderReports: React.FC = () => {
                 return orderDate >= dateRange.start && orderDate <= dateRange.end;
             } catch (e) { return false; }
         });
+        
+        return filtered.sort((a, b) => parseOrderDate(b.orderTime) - parseOrderDate(a.orderTime));
     }, [orders, dateRange]);
 
     const handleExport = async () => {
@@ -64,8 +78,8 @@ const OrderReports: React.FC = () => {
 
             worksheet.columns = [
                 { header: 'Order ID', key: 'id', width: 20 },
-                { header: 'Date', key: 'date', width: 15 },
                 { header: 'Customer Name', key: 'customer', width: 30 },
+                { header: 'Date & Time', key: 'date', width: 25 },
                 { header: 'Total Amount', key: 'amount', width: 15 },
                 { header: 'Status', key: 'status', width: 15 },
                 { header: 'Warehouse', key: 'warehouse', width: 20 }
@@ -74,8 +88,8 @@ const OrderReports: React.FC = () => {
             filtered.forEach(o => {
                 worksheet.addRow({
                     id: o.id,
-                    date: o.orderTime.split(' ')[0],
                     customer: o.customerName,
+                    date: o.orderTime,
                     amount: o.totalAmount || 0,
                     status: o.status.toUpperCase(),
                     warehouse: o.warehouse
@@ -127,8 +141,8 @@ const OrderReports: React.FC = () => {
 
             worksheet.columns = [
                 { header: 'Order ID', key: 'id', width: 20 },
-                { header: 'Date', key: 'date', width: 15 },
                 { header: 'Customer', key: 'customer', width: 30 },
+                { header: 'Date & Time', key: 'date', width: 25 },
                 { header: 'Brand', key: 'brand', width: 15 },
                 { header: 'Model', key: 'model', width: 35 },
                 { header: 'Qty', key: 'qty', width: 10 },
@@ -146,8 +160,8 @@ const OrderReports: React.FC = () => {
                         const rowSubtotal = rowQty * rowRate;
                         worksheet.addRow({
                             id: index === 0 ? o.id : '',
-                            date: index === 0 ? o.orderTime.split(' ')[0] : '',
                             customer: index === 0 ? o.customerName : '',
+                            date: index === 0 ? o.orderTime : '',
                             brand: item.brand,
                             model: item.model,
                             qty: rowQty,

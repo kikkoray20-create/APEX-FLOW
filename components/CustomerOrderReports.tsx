@@ -87,10 +87,13 @@ const CustomerOrderReports: React.FC = () => {
 
     const parseDateToComparable = (dateStr: string) => {
         try {
-            const [datePart] = dateStr.split(' ');
-            if (datePart.includes('/')) {
-                const [d, m, y] = datePart.split('/');
-                return new Date(Number(y), Number(m) - 1, Number(d)).getTime();
+            const [dPart, tPart, ampm] = dateStr.split(' ');
+            if (dPart && dPart.includes('/')) {
+                const [d, m, y] = dPart.split('/').map(Number);
+                let [hh, mm] = (tPart || '00:00').split(':').map(Number);
+                if (ampm === 'PM' && hh < 12) hh += 12;
+                if (ampm === 'AM' && hh === 12) hh = 0;
+                return new Date(y, m - 1, d, hh, mm).getTime();
             }
             const d = new Date(dateStr);
             return isNaN(d.getTime()) ? 0 : d.getTime();
@@ -172,7 +175,7 @@ const CustomerOrderReports: React.FC = () => {
 
         return Object.values(statsMap)
             .filter(s => s.customerName.toLowerCase().includes(customerSearch.toLowerCase()) || s.phone.includes(customerSearch))
-            .sort((a, b) => b.orderCount - a.orderCount);
+            .sort((a, b) => parseDateToComparable(b.lastOrderDate) - parseDateToComparable(a.lastOrderDate));
     }, [verifiedOrdersInRange, customers, customerSearch]);
 
     // Pagination Logic
@@ -265,10 +268,9 @@ const CustomerOrderReports: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-4 text-right text-sm text-slate-600 font-medium">{stat.totalOrderQty} Units</td>
                                             <td className="px-4 py-4 text-right font-black text-emerald-600 text-sm">{stat.totalFulfilled} Units</td>
-                                            <td className="px-4 py-4 text-center">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-600 border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                    <Clock size={10} className="text-slate-400" />
-                                                    {formatDateToDisplay(stat.lastOrderDate)}
+                                            <td className="px-4 py-4 text-left">
+                                                <span className="text-[11px] text-slate-500 font-bold uppercase whitespace-nowrap">
+                                                    {stat.lastOrderDate}
                                                 </span>
                                             </td>
                                         </tr>
