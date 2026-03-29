@@ -67,7 +67,32 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
                 fetchCustomers(currentUser.instanceId),
                 fetchInventory(currentUser.instanceId)
             ]);
-            setGrs(allOrders.filter(o => o.status === 'Return'));
+            
+            const grOrders = allOrders.filter(o => o.status === 'Return').map(gr => {
+                let items = gr.items || [];
+                if (items.length === 0) {
+                    const storedItems = localStorage.getItem(`apexflow_gr_items_${gr.id}`);
+                    if (storedItems) {
+                        try {
+                            const parsed = JSON.parse(storedItems);
+                            // Map the structure to match what we expect
+                            items = parsed.map((entry: any) => ({
+                                brand: entry.item?.brand || entry.brand,
+                                model: entry.item?.model || entry.model,
+                                quality: entry.item?.quality || entry.quality,
+                                category: entry.item?.category || entry.category,
+                                returnQty: entry.returnQty || entry.fulfillQty || 0,
+                                price: entry.returnPrice || entry.price || 0
+                            }));
+                        } catch (e) {
+                            items = [];
+                        }
+                    }
+                }
+                return { ...gr, items };
+            });
+            
+            setGrs(grOrders);
             setCustomers(allCustomers);
             setInventory(allInventory);
         } catch (error) {
@@ -102,18 +127,7 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
             // Do not aggregate; show each GR as a separate row
             const data = filteredGRs.map(gr => {
                 let totalUnits = 0;
-                let items = gr.items || [];
-                
-                if (items.length === 0) {
-                    const storedItems = localStorage.getItem(`apexflow_items_${gr.id}`);
-                    if (storedItems) {
-                        try {
-                            items = JSON.parse(storedItems);
-                        } catch (e) {
-                            items = [];
-                        }
-                    }
-                }
+                const items = gr.items || [];
 
                 items.forEach((item: any) => {
                     totalUnits += (Number(item.returnQty) || Number(item.fulfillQty) || 0);
@@ -192,22 +206,22 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
             
             // 1. Add all returns
             grs.forEach(gr => {
-                if (gr.items) {
-                    gr.items.forEach((entry: any) => {
-                        const key = `${entry.brand}-${entry.model}-${entry.quality}`.toUpperCase();
-                        if (!stockMap[key]) {
-                            stockMap[key] = {
-                                'Brand': entry.brand,
-                                'Model': entry.model,
-                                'Quality': entry.quality,
-                                'Category': entry.category || '',
-                                'Current GR Stock': 0,
-                                'Last Return Date': gr.orderTime
-                            };
-                        }
-                        stockMap[key]['Current GR Stock'] += (entry.returnQty || 0);
-                    });
-                }
+                const items = gr.items || [];
+
+                items.forEach((entry: any) => {
+                    const key = `${entry.brand}-${entry.model}-${entry.quality}`.toUpperCase();
+                    if (!stockMap[key]) {
+                        stockMap[key] = {
+                            'Brand': entry.brand,
+                            'Model': entry.model,
+                            'Quality': entry.quality,
+                            'Category': entry.category || '',
+                            'Current GR Stock': 0,
+                            'Last Return Date': gr.orderTime
+                        };
+                    }
+                    stockMap[key]['Current GR Stock'] += (Number(entry.returnQty) || Number(entry.fulfillQty) || 0);
+                });
             });
 
             // 2. Subtract removals
@@ -380,7 +394,7 @@ const GRReports: React.FC<GRReportsProps> = ({ currentUser }) => {
                                 <div className="px-2 py-1 bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-black">LIVE</div>
                             </div>
                             <p className="text-3xl font-black text-slate-900">
-                                {grs.reduce((sum, gr) => sum + (gr.items?.reduce((s: number, i: any) => s + (i.returnQty || 0), 0) || 0), 0)}
+                                {grs.reduce((sum, gr) => sum + (gr.items?.reduce((s: number, i: any) => s + (Number(i.returnQty) || Number(i.fulfillQty) || 0), 0) || 0), 0)}
                             </p>
                         </div>
 
